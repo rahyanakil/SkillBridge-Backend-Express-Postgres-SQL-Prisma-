@@ -302,7 +302,7 @@ npx prisma migrate deploy
 
 ---
 
-# 🧾 Required for Assignment Submission
+# 🧾 Required for Project Submission
 
 ```
 Frontend Repo:
