@@ -1,4 +1,7 @@
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+
+import config from "../../config";
 import { prisma } from "../../lib/prisma";
 
 const createUser = async (payload: any) => {
@@ -13,7 +16,37 @@ const createUser = async (payload: any) => {
   const { password, ...newPassword } = result;
   return newPassword;
 };
-
+const loginUser = async (payload: any) => {
+  const user = await prisma.user.findUnique({
+    where: {
+      email: payload.email,
+    },
+  });
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const isPasswordMatched = await bcrypt.compare(
+    payload.password,
+    user.password,
+  );
+  if (!isPasswordMatched) {
+    throw new Error("Invalid credentials!!");
+  }
+  const userData = {
+    id: user.id,
+    name: user.name,
+    role: user.role,
+    email: user.email,
+  };
+  const token = jwt.sign(userData, config.jwt.secret as string, {
+    expiresIn: config.jwt.expiresIn as string,
+  });
+  return {
+    token,
+    user,
+  };
+};
 export const AuthService = {
   createUser,
+  loginUser,
 };
