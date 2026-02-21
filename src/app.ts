@@ -1,6 +1,8 @@
 import cors from "cors";
 import express, { Application, Request, Response } from "express";
-import { AuthRoutes } from "./modules/auth/auth.routes";
+import { errorHandler } from "./middlewares/globalErrorHandler";
+import { notFound } from "./middlewares/notFound";
+import router from "./routes";
 
 const app: Application = express();
 
@@ -8,12 +10,13 @@ const app: Application = express();
 app.use(express.json());
 app.use(cors());
 
-// application routes
-// app.use('/api/v1', router);
-app.use("/api/v1/auth", AuthRoutes);
+//application routes
+app.use("/api/v1", router);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello from Apollo Gears World!");
 });
+app.use(errorHandler);
+app.use(notFound);
 
 export default app;

@@ -38,12 +38,16 @@ const loginUser = async (payload: any) => {
     role: user.role,
     email: user.email,
   };
+  // const signOptions: SignOptions = {
+  //   expiresIn: config.jwt.expiresIn,
+  // };
   const token = jwt.sign(userData, config.jwt.secret as string, {
-    expiresIn: config.jwt.expiresIn as string,
+    expiresIn: config.jwt.expiresIn as jwt.SignOptions["expiresIn"],
   });
+  const { password, ...safeUser } = user;
   return {
     token,
-    user,
+    user: safeUser,
   };
 };
 export const AuthService = {
