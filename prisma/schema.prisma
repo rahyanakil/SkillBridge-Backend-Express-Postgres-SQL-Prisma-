@@ -16,6 +16,7 @@ model User {
     avatar    String?
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
+    
     tutorProfile Tutor? 
 
     
@@ -34,6 +35,10 @@ model Tutor{
   expertise String
   hourlyRate Float
   experience Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+ 
 
   
 }

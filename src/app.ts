@@ -16,7 +16,7 @@ app.use("/api/v1", router);
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello from Apollo Gears World!");
 });
-app.use(errorHandler);
 app.use(notFound);
+app.use(errorHandler);
 
 export default app;
