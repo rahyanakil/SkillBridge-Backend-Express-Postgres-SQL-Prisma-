@@ -35,9 +35,9 @@ const getProfileByUserId = async (userId: string) => {
     where: { userId },
     include: {
       user: true,
-      // courses: true,
-      // booking: true,
-      // reviews: true,
+      courses: true,
+      booking: true,
+      reviews: true,
     },
   });
   if (!profile) {
@@ -50,6 +50,8 @@ const getAllTutors = async () => {
   return await prisma.tutor.findMany({
     include: {
       user: true,
+      courses: true,
+      reviews: true,
     },
   });
 };

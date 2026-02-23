@@ -30,7 +30,7 @@ const auth = (...roles: UserRole[]) => {
       if (roles.length && !roles.includes(decoded.role)) {
         throw new Error("Unauthorized");
       }
-      // req.user = decoded;
+
       req.user = userData;
       next();
     } catch (err: any) {

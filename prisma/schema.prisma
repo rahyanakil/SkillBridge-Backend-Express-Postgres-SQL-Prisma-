@@ -14,11 +14,13 @@ model User {
     password  String
     role      Role @default(STUDENT)
     avatar    String?
+    isBanned Boolean @default(false)
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
     
     tutorProfile Tutor? 
-
+    bookings Booking[] @relation("StudentBookings")
+    review  Review[]  @relation("StudentReviews")
     
 
     
@@ -27,7 +29,7 @@ model User {
 // TUTOR Model 
 model Tutor{
   id String @id @default(uuid())
-  user User  @relation(fields: [userId],references: [id])
+  user User  @relation(fields: [userId],references: [id],onDelete: Cascade)
   userId String @unique
 
 
@@ -35,14 +37,85 @@ model Tutor{
   expertise String
   hourlyRate Float
   experience Int
+
+  courses Course[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  bookings Booking[] @relation("TutorBookings")
+  reviews Review[]
+  
 
  
 
   
 }
 
+
+model Category{
+  id String @id @default(uuid())
+  name String @unique
+  courses Course[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+}
+
+model Course{
+  id String @id @default(uuid())
+  tutorId String
+  categoryId String
+  title String
+  description String
+  price Float
+
+  tutor Tutor @relation(fields: [tutorId],references: [id],onDelete: Cascade)
+  category Category @relation(fields: [categoryId],references: [id],onDelete: Cascade)
+  bookings Booking[]
+  reviews Review[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Booking {
+  id String @id @default(uuid())
+  studentId String
+  tutorId String
+  courseId String
+  date DateTime
+  status BookingStatus @default(PENDING)
+
+
+  student User @relation("StudentBookings",fields: [studentId],references: [id])
+  tutor Tutor @relation("TutorBookings",fields: [tutorId],references: [id])
+  course Course @relation(fields: [courseId],references: [id],onDelete: Cascade)
+  review Review?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Review{
+  id String @id @default(uuid())
+  rating Int
+  comment String?
+  studentId String
+  Student User @relation("StudentReviews",fields: [studentId],references: [id],onDelete: Cascade)
+  tutorId String
+  tutor Tutor @relation(fields: [tutorId],references: [id],onDelete: Cascade)
+  courseId String
+  course Course @relation(fields: [courseId],references: [id],onDelete: Cascade)
+  bookingId String @unique
+  booking Booking @relation(fields: [bookingId],references: [id],onDelete: Cascade)
+
+
+
+
+
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
 
 // enums 
 enum Role{
