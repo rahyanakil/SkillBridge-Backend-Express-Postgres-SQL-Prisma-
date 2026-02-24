@@ -2,22 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "src/server.ts",
-      "use": "@vercel/node",
-      "config": { "runtime": "nodejs20.x" }
+      "src": "api/index.mjs",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "src/server.ts"
+      "dest": "/api/index.mjs"
     }
-  ],
-  "env": {
-    "DATABASE_URL": "@DATABASE_URL",
-    "JWT_SECRET": "@JWT_SECRET",
-    "JWT_EXPIRES_IN": "@JWT_EXPIRES_IN",
-    "ADMIN_EMAIL": "@ADMIN_EMAIL",
-    "ADMIN_PASSWORD": "@ADMIN_PASSWORD"
-  }
+  ]
 }

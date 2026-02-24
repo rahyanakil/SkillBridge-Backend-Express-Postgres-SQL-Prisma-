@@ -1,0 +1,1943 @@
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+}) : x)(function(x) {
+  if (typeof require !== "undefined") return require.apply(this, arguments);
+  throw Error('Dynamic require of "' + x + '" is not supported');
+});
+var __commonJS = (cb, mod) => function __require2() {
+  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+};
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+
+// node_modules/dotenv/package.json
+var require_package = __commonJS({
+  "node_modules/dotenv/package.json"(exports, module) {
+    module.exports = {
+      name: "dotenv",
+      version: "17.3.1",
+      description: "Loads environment variables from .env file",
+      main: "lib/main.js",
+      types: "lib/main.d.ts",
+      exports: {
+        ".": {
+          types: "./lib/main.d.ts",
+          require: "./lib/main.js",
+          default: "./lib/main.js"
+        },
+        "./config": "./config.js",
+        "./config.js": "./config.js",
+        "./lib/env-options": "./lib/env-options.js",
+        "./lib/env-options.js": "./lib/env-options.js",
+        "./lib/cli-options": "./lib/cli-options.js",
+        "./lib/cli-options.js": "./lib/cli-options.js",
+        "./package.json": "./package.json"
+      },
+      scripts: {
+        "dts-check": "tsc --project tests/types/tsconfig.json",
+        lint: "standard",
+        pretest: "npm run lint && npm run dts-check",
+        test: "tap run tests/**/*.js --allow-empty-coverage --disable-coverage --timeout=60000",
+        "test:coverage": "tap run tests/**/*.js --show-full-coverage --timeout=60000 --coverage-report=text --coverage-report=lcov",
+        prerelease: "npm test",
+        release: "standard-version"
+      },
+      repository: {
+        type: "git",
+        url: "git://github.com/motdotla/dotenv.git"
+      },
+      homepage: "https://github.com/motdotla/dotenv#readme",
+      funding: "https://dotenvx.com",
+      keywords: [
+        "dotenv",
+        "env",
+        ".env",
+        "environment",
+        "variables",
+        "config",
+        "settings"
+      ],
+      readmeFilename: "README.md",
+      license: "BSD-2-Clause",
+      devDependencies: {
+        "@types/node": "^18.11.3",
+        decache: "^4.6.2",
+        sinon: "^14.0.1",
+        standard: "^17.0.0",
+        "standard-version": "^9.5.0",
+        tap: "^19.2.0",
+        typescript: "^4.8.4"
+      },
+      engines: {
+        node: ">=12"
+      },
+      browser: {
+        fs: false
+      }
+    };
+  }
+});
+
+// node_modules/dotenv/lib/main.js
+var require_main = __commonJS({
+  "node_modules/dotenv/lib/main.js"(exports, module) {
+    "use strict";
+    var fs = __require("fs");
+    var path3 = __require("path");
+    var os = __require("os");
+    var crypto = __require("crypto");
+    var packageJson = require_package();
+    var version = packageJson.version;
+    var TIPS = [
+      "\u{1F510} encrypt with Dotenvx: https://dotenvx.com",
+      "\u{1F510} prevent committing .env to code: https://dotenvx.com/precommit",
+      "\u{1F510} prevent building .env in docker: https://dotenvx.com/prebuild",
+      "\u{1F916} agentic secret storage: https://dotenvx.com/as2",
+      "\u26A1\uFE0F secrets for agents: https://dotenvx.com/as2",
+      "\u{1F6E1}\uFE0F auth for agents: https://vestauth.com",
+      "\u{1F6E0}\uFE0F  run anywhere with `dotenvx run -- yourcommand`",
+      "\u2699\uFE0F  specify custom .env file path with { path: '/custom/path/.env' }",
+      "\u2699\uFE0F  enable debug logging with { debug: true }",
+      "\u2699\uFE0F  override existing env vars with { override: true }",
+      "\u2699\uFE0F  suppress all logs with { quiet: true }",
+      "\u2699\uFE0F  write to custom object with { processEnv: myObject }",
+      "\u2699\uFE0F  load multiple .env files with { path: ['.env.local', '.env'] }"
+    ];
+    function _getRandomTip() {
+      return TIPS[Math.floor(Math.random() * TIPS.length)];
+    }
+    function parseBoolean(value) {
+      if (typeof value === "string") {
+        return !["false", "0", "no", "off", ""].includes(value.toLowerCase());
+      }
+      return Boolean(value);
+    }
+    function supportsAnsi() {
+      return process.stdout.isTTY;
+    }
+    function dim(text) {
+      return supportsAnsi() ? `\x1B[2m${text}\x1B[0m` : text;
+    }
+    var LINE = /(?:^|^)\s*(?:export\s+)?([\w.-]+)(?:\s*=\s*?|:\s+?)(\s*'(?:\\'|[^'])*'|\s*"(?:\\"|[^"])*"|\s*`(?:\\`|[^`])*`|[^#\r\n]+)?\s*(?:#.*)?(?:$|$)/mg;
+    function parse(src) {
+      const obj = {};
+      let lines = src.toString();
+      lines = lines.replace(/\r\n?/mg, "\n");
+      let match;
+      while ((match = LINE.exec(lines)) != null) {
+        const key = match[1];
+        let value = match[2] || "";
+        value = value.trim();
+        const maybeQuote = value[0];
+        value = value.replace(/^(['"`])([\s\S]*)\1$/mg, "$2");
+        if (maybeQuote === '"') {
+          value = value.replace(/\\n/g, "\n");
+          value = value.replace(/\\r/g, "\r");
+        }
+        obj[key] = value;
+      }
+      return obj;
+    }
+    function _parseVault(options) {
+      options = options || {};
+      const vaultPath = _vaultPath(options);
+      options.path = vaultPath;
+      const result = DotenvModule.configDotenv(options);
+      if (!result.parsed) {
+        const err = new Error(`MISSING_DATA: Cannot parse ${vaultPath} for an unknown reason`);
+        err.code = "MISSING_DATA";
+        throw err;
+      }
+      const keys = _dotenvKey(options).split(",");
+      const length = keys.length;
+      let decrypted;
+      for (let i = 0; i < length; i++) {
+        try {
+          const key = keys[i].trim();
+          const attrs = _instructions(result, key);
+          decrypted = DotenvModule.decrypt(attrs.ciphertext, attrs.key);
+          break;
+        } catch (error) {
+          if (i + 1 >= length) {
+            throw error;
+          }
+        }
+      }
+      return DotenvModule.parse(decrypted);
+    }
+    function _warn(message) {
+      console.error(`[dotenv@${version}][WARN] ${message}`);
+    }
+    function _debug(message) {
+      console.log(`[dotenv@${version}][DEBUG] ${message}`);
+    }
+    function _log(message) {
+      console.log(`[dotenv@${version}] ${message}`);
+    }
+    function _dotenvKey(options) {
+      if (options && options.DOTENV_KEY && options.DOTENV_KEY.length > 0) {
+        return options.DOTENV_KEY;
+      }
+      if (process.env.DOTENV_KEY && process.env.DOTENV_KEY.length > 0) {
+        return process.env.DOTENV_KEY;
+      }
+      return "";
+    }
+    function _instructions(result, dotenvKey) {
+      let uri;
+      try {
+        uri = new URL(dotenvKey);
+      } catch (error) {
+        if (error.code === "ERR_INVALID_URL") {
+          const err = new Error("INVALID_DOTENV_KEY: Wrong format. Must be in valid uri format like dotenv://:key_1234@dotenvx.com/vault/.env.vault?environment=development");
+          err.code = "INVALID_DOTENV_KEY";
+          throw err;
+        }
+        throw error;
+      }
+      const key = uri.password;
+      if (!key) {
+        const err = new Error("INVALID_DOTENV_KEY: Missing key part");
+        err.code = "INVALID_DOTENV_KEY";
+        throw err;
+      }
+      const environment = uri.searchParams.get("environment");
+      if (!environment) {
+        const err = new Error("INVALID_DOTENV_KEY: Missing environment part");
+        err.code = "INVALID_DOTENV_KEY";
+        throw err;
+      }
+      const environmentKey = `DOTENV_VAULT_${environment.toUpperCase()}`;
+      const ciphertext = result.parsed[environmentKey];
+      if (!ciphertext) {
+        const err = new Error(`NOT_FOUND_DOTENV_ENVIRONMENT: Cannot locate environment ${environmentKey} in your .env.vault file.`);
+        err.code = "NOT_FOUND_DOTENV_ENVIRONMENT";
+        throw err;
+      }
+      return { ciphertext, key };
+    }
+    function _vaultPath(options) {
+      let possibleVaultPath = null;
+      if (options && options.path && options.path.length > 0) {
+        if (Array.isArray(options.path)) {
+          for (const filepath of options.path) {
+            if (fs.existsSync(filepath)) {
+              possibleVaultPath = filepath.endsWith(".vault") ? filepath : `${filepath}.vault`;
+            }
+          }
+        } else {
+          possibleVaultPath = options.path.endsWith(".vault") ? options.path : `${options.path}.vault`;
+        }
+      } else {
+        possibleVaultPath = path3.resolve(process.cwd(), ".env.vault");
+      }
+      if (fs.existsSync(possibleVaultPath)) {
+        return possibleVaultPath;
+      }
+      return null;
+    }
+    function _resolveHome(envPath) {
+      return envPath[0] === "~" ? path3.join(os.homedir(), envPath.slice(1)) : envPath;
+    }
+    function _configVault(options) {
+      const debug = parseBoolean(process.env.DOTENV_CONFIG_DEBUG || options && options.debug);
+      const quiet = parseBoolean(process.env.DOTENV_CONFIG_QUIET || options && options.quiet);
+      if (debug || !quiet) {
+        _log("Loading env from encrypted .env.vault");
+      }
+      const parsed = DotenvModule._parseVault(options);
+      let processEnv = process.env;
+      if (options && options.processEnv != null) {
+        processEnv = options.processEnv;
+      }
+      DotenvModule.populate(processEnv, parsed, options);
+      return { parsed };
+    }
+    function configDotenv(options) {
+      const dotenvPath = path3.resolve(process.cwd(), ".env");
+      let encoding = "utf8";
+      let processEnv = process.env;
+      if (options && options.processEnv != null) {
+        processEnv = options.processEnv;
+      }
+      let debug = parseBoolean(processEnv.DOTENV_CONFIG_DEBUG || options && options.debug);
+      let quiet = parseBoolean(processEnv.DOTENV_CONFIG_QUIET || options && options.quiet);
+      if (options && options.encoding) {
+        encoding = options.encoding;
+      } else {
+        if (debug) {
+          _debug("No encoding is specified. UTF-8 is used by default");
+        }
+      }
+      let optionPaths = [dotenvPath];
+      if (options && options.path) {
+        if (!Array.isArray(options.path)) {
+          optionPaths = [_resolveHome(options.path)];
+        } else {
+          optionPaths = [];
+          for (const filepath of options.path) {
+            optionPaths.push(_resolveHome(filepath));
+          }
+        }
+      }
+      let lastError;
+      const parsedAll = {};
+      for (const path4 of optionPaths) {
+        try {
+          const parsed = DotenvModule.parse(fs.readFileSync(path4, { encoding }));
+          DotenvModule.populate(parsedAll, parsed, options);
+        } catch (e) {
+          if (debug) {
+            _debug(`Failed to load ${path4} ${e.message}`);
+          }
+          lastError = e;
+        }
+      }
+      const populated = DotenvModule.populate(processEnv, parsedAll, options);
+      debug = parseBoolean(processEnv.DOTENV_CONFIG_DEBUG || debug);
+      quiet = parseBoolean(processEnv.DOTENV_CONFIG_QUIET || quiet);
+      if (debug || !quiet) {
+        const keysCount = Object.keys(populated).length;
+        const shortPaths = [];
+        for (const filePath of optionPaths) {
+          try {
+            const relative = path3.relative(process.cwd(), filePath);
+            shortPaths.push(relative);
+          } catch (e) {
+            if (debug) {
+              _debug(`Failed to load ${filePath} ${e.message}`);
+            }
+            lastError = e;
+          }
+        }
+        _log(`injecting env (${keysCount}) from ${shortPaths.join(",")} ${dim(`-- tip: ${_getRandomTip()}`)}`);
+      }
+      if (lastError) {
+        return { parsed: parsedAll, error: lastError };
+      } else {
+        return { parsed: parsedAll };
+      }
+    }
+    function config3(options) {
+      if (_dotenvKey(options).length === 0) {
+        return DotenvModule.configDotenv(options);
+      }
+      const vaultPath = _vaultPath(options);
+      if (!vaultPath) {
+        _warn(`You set DOTENV_KEY but you are missing a .env.vault file at ${vaultPath}. Did you forget to build it?`);
+        return DotenvModule.configDotenv(options);
+      }
+      return DotenvModule._configVault(options);
+    }
+    function decrypt(encrypted, keyStr) {
+      const key = Buffer.from(keyStr.slice(-64), "hex");
+      let ciphertext = Buffer.from(encrypted, "base64");
+      const nonce = ciphertext.subarray(0, 12);
+      const authTag = ciphertext.subarray(-16);
+      ciphertext = ciphertext.subarray(12, -16);
+      try {
+        const aesgcm = crypto.createDecipheriv("aes-256-gcm", key, nonce);
+        aesgcm.setAuthTag(authTag);
+        return `${aesgcm.update(ciphertext)}${aesgcm.final()}`;
+      } catch (error) {
+        const isRange = error instanceof RangeError;
+        const invalidKeyLength = error.message === "Invalid key length";
+        const decryptionFailed = error.message === "Unsupported state or unable to authenticate data";
+        if (isRange || invalidKeyLength) {
+          const err = new Error("INVALID_DOTENV_KEY: It must be 64 characters long (or more)");
+          err.code = "INVALID_DOTENV_KEY";
+          throw err;
+        } else if (decryptionFailed) {
+          const err = new Error("DECRYPTION_FAILED: Please check your DOTENV_KEY");
+          err.code = "DECRYPTION_FAILED";
+          throw err;
+        } else {
+          throw error;
+        }
+      }
+    }
+    function populate(processEnv, parsed, options = {}) {
+      const debug = Boolean(options && options.debug);
+      const override = Boolean(options && options.override);
+      const populated = {};
+      if (typeof parsed !== "object") {
+        const err = new Error("OBJECT_REQUIRED: Please check the processEnv argument being passed to populate");
+        err.code = "OBJECT_REQUIRED";
+        throw err;
+      }
+      for (const key of Object.keys(parsed)) {
+        if (Object.prototype.hasOwnProperty.call(processEnv, key)) {
+          if (override === true) {
+            processEnv[key] = parsed[key];
+            populated[key] = parsed[key];
+          }
+          if (debug) {
+            if (override === true) {
+              _debug(`"${key}" is already defined and WAS overwritten`);
+            } else {
+              _debug(`"${key}" is already defined and was NOT overwritten`);
+            }
+          }
+        } else {
+          processEnv[key] = parsed[key];
+          populated[key] = parsed[key];
+        }
+      }
+      return populated;
+    }
+    var DotenvModule = {
+      configDotenv,
+      _configVault,
+      _parseVault,
+      config: config3,
+      decrypt,
+      parse,
+      populate
+    };
+    module.exports.configDotenv = DotenvModule.configDotenv;
+    module.exports._configVault = DotenvModule._configVault;
+    module.exports._parseVault = DotenvModule._parseVault;
+    module.exports.config = DotenvModule.config;
+    module.exports.decrypt = DotenvModule.decrypt;
+    module.exports.parse = DotenvModule.parse;
+    module.exports.populate = DotenvModule.populate;
+    module.exports = DotenvModule;
+  }
+});
+
+// node_modules/dotenv/lib/env-options.js
+var require_env_options = __commonJS({
+  "node_modules/dotenv/lib/env-options.js"(exports, module) {
+    "use strict";
+    var options = {};
+    if (process.env.DOTENV_CONFIG_ENCODING != null) {
+      options.encoding = process.env.DOTENV_CONFIG_ENCODING;
+    }
+    if (process.env.DOTENV_CONFIG_PATH != null) {
+      options.path = process.env.DOTENV_CONFIG_PATH;
+    }
+    if (process.env.DOTENV_CONFIG_QUIET != null) {
+      options.quiet = process.env.DOTENV_CONFIG_QUIET;
+    }
+    if (process.env.DOTENV_CONFIG_DEBUG != null) {
+      options.debug = process.env.DOTENV_CONFIG_DEBUG;
+    }
+    if (process.env.DOTENV_CONFIG_OVERRIDE != null) {
+      options.override = process.env.DOTENV_CONFIG_OVERRIDE;
+    }
+    if (process.env.DOTENV_CONFIG_DOTENV_KEY != null) {
+      options.DOTENV_KEY = process.env.DOTENV_CONFIG_DOTENV_KEY;
+    }
+    module.exports = options;
+  }
+});
+
+// node_modules/dotenv/lib/cli-options.js
+var require_cli_options = __commonJS({
+  "node_modules/dotenv/lib/cli-options.js"(exports, module) {
+    "use strict";
+    var re = /^dotenv_config_(encoding|path|quiet|debug|override|DOTENV_KEY)=(.+)$/;
+    module.exports = function optionMatcher(args) {
+      const options = args.reduce(function(acc, cur) {
+        const matches = cur.match(re);
+        if (matches) {
+          acc[matches[1]] = matches[2];
+        }
+        return acc;
+      }, {});
+      if (!("quiet" in options)) {
+        options.quiet = "true";
+      }
+      return options;
+    };
+  }
+});
+
+// src/app.ts
+import cors from "cors";
+import express8 from "express";
+
+// src/middlewares/globalErrorHandler.ts
+import { ZodError } from "zod";
+
+// generated/prisma/client.ts
+import * as path from "path";
+import { fileURLToPath } from "url";
+
+// generated/prisma/internal/class.ts
+import * as runtime from "@prisma/client/runtime/client";
+var config = {
+  "previewFeatures": [],
+  "clientVersion": "7.4.1",
+  "engineVersion": "55ae170b1ced7fc6ed07a15f110549408c501bb3",
+  "activeProvider": "postgresql",
+  "inlineSchema": 'generator client {\n  provider = "prisma-client"\n  output   = "../generated/prisma"\n}\n\ndatasource db {\n  provider = "postgresql"\n}\n\nmodel User {\n  id        String   @id @default(uuid())\n  name      String\n  email     String   @unique\n  password  String\n  role      Role     @default(STUDENT)\n  avatar    String?\n  isBanned  Boolean  @default(false)\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  tutorProfile Tutor?\n  bookings     Booking[] @relation("StudentBookings")\n  review       Review[]  @relation("StudentReviews")\n}\n\n// TUTOR Model \nmodel Tutor {\n  id     String @id @default(uuid())\n  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)\n  userId String @unique\n\n  bio        String\n  expertise  String\n  hourlyRate Float\n  experience Int\n\n  courses Course[]\n\n  createdAt DateTime  @default(now())\n  updatedAt DateTime  @updatedAt\n  bookings  Booking[] @relation("TutorBookings")\n  reviews   Review[]\n}\n\nmodel Category {\n  id        String   @id @default(uuid())\n  name      String   @unique\n  courses   Course[]\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\nmodel Course {\n  id          String @id @default(uuid())\n  tutorId     String\n  categoryId  String\n  title       String\n  description String\n  price       Float\n\n  tutor    Tutor     @relation(fields: [tutorId], references: [id], onDelete: Cascade)\n  category Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)\n  bookings Booking[]\n  reviews  Review[]\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\nmodel Booking {\n  id        String        @id @default(uuid())\n  studentId String\n  tutorId   String\n  courseId  String\n  date      DateTime\n  status    BookingStatus @default(PENDING)\n\n  student   User     @relation("StudentBookings", fields: [studentId], references: [id])\n  tutor     Tutor    @relation("TutorBookings", fields: [tutorId], references: [id])\n  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)\n  review    Review?\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\nmodel Review {\n  id        String  @id @default(uuid())\n  rating    Int\n  comment   String?\n  studentId String\n  Student   User    @relation("StudentReviews", fields: [studentId], references: [id], onDelete: Cascade)\n  tutorId   String\n  tutor     Tutor   @relation(fields: [tutorId], references: [id], onDelete: Cascade)\n  courseId  String\n  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)\n  bookingId String  @unique\n  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\n// enums \nenum Role {\n  STUDENT\n  TUTOR\n  ADMIN\n}\n\nenum BookingStatus {\n  PENDING\n  ACCEPTED\n  REJECTED\n  COMPLETED\n  CANCELLED\n}\n',
+  "runtimeDataModel": {
+    "models": {},
+    "enums": {},
+    "types": {}
+  },
+  "parameterizationSchema": {
+    "strings": [],
+    "graph": ""
+  }
+};
+config.runtimeDataModel = JSON.parse('{"models":{"User":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"name","kind":"scalar","type":"String"},{"name":"email","kind":"scalar","type":"String"},{"name":"password","kind":"scalar","type":"String"},{"name":"role","kind":"enum","type":"Role"},{"name":"avatar","kind":"scalar","type":"String"},{"name":"isBanned","kind":"scalar","type":"Boolean"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"},{"name":"tutorProfile","kind":"object","type":"Tutor","relationName":"TutorToUser"},{"name":"bookings","kind":"object","type":"Booking","relationName":"StudentBookings"},{"name":"review","kind":"object","type":"Review","relationName":"StudentReviews"}],"dbName":null},"Tutor":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"user","kind":"object","type":"User","relationName":"TutorToUser"},{"name":"userId","kind":"scalar","type":"String"},{"name":"bio","kind":"scalar","type":"String"},{"name":"expertise","kind":"scalar","type":"String"},{"name":"hourlyRate","kind":"scalar","type":"Float"},{"name":"experience","kind":"scalar","type":"Int"},{"name":"courses","kind":"object","type":"Course","relationName":"CourseToTutor"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"},{"name":"bookings","kind":"object","type":"Booking","relationName":"TutorBookings"},{"name":"reviews","kind":"object","type":"Review","relationName":"ReviewToTutor"}],"dbName":null},"Category":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"name","kind":"scalar","type":"String"},{"name":"courses","kind":"object","type":"Course","relationName":"CategoryToCourse"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"}],"dbName":null},"Course":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"tutorId","kind":"scalar","type":"String"},{"name":"categoryId","kind":"scalar","type":"String"},{"name":"title","kind":"scalar","type":"String"},{"name":"description","kind":"scalar","type":"String"},{"name":"price","kind":"scalar","type":"Float"},{"name":"tutor","kind":"object","type":"Tutor","relationName":"CourseToTutor"},{"name":"category","kind":"object","type":"Category","relationName":"CategoryToCourse"},{"name":"bookings","kind":"object","type":"Booking","relationName":"BookingToCourse"},{"name":"reviews","kind":"object","type":"Review","relationName":"CourseToReview"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"}],"dbName":null},"Booking":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"studentId","kind":"scalar","type":"String"},{"name":"tutorId","kind":"scalar","type":"String"},{"name":"courseId","kind":"scalar","type":"String"},{"name":"date","kind":"scalar","type":"DateTime"},{"name":"status","kind":"enum","type":"BookingStatus"},{"name":"student","kind":"object","type":"User","relationName":"StudentBookings"},{"name":"tutor","kind":"object","type":"Tutor","relationName":"TutorBookings"},{"name":"course","kind":"object","type":"Course","relationName":"BookingToCourse"},{"name":"review","kind":"object","type":"Review","relationName":"BookingToReview"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"}],"dbName":null},"Review":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"rating","kind":"scalar","type":"Int"},{"name":"comment","kind":"scalar","type":"String"},{"name":"studentId","kind":"scalar","type":"String"},{"name":"Student","kind":"object","type":"User","relationName":"StudentReviews"},{"name":"tutorId","kind":"scalar","type":"String"},{"name":"tutor","kind":"object","type":"Tutor","relationName":"ReviewToTutor"},{"name":"courseId","kind":"scalar","type":"String"},{"name":"course","kind":"object","type":"Course","relationName":"CourseToReview"},{"name":"bookingId","kind":"scalar","type":"String"},{"name":"booking","kind":"object","type":"Booking","relationName":"BookingToReview"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"}],"dbName":null}},"enums":{},"types":{}}');
+config.parameterizationSchema = {
+  strings: JSON.parse('["where","user","orderBy","cursor","tutor","courses","_count","category","student","course","Student","booking","review","bookings","reviews","tutorProfile","User.findUnique","User.findUniqueOrThrow","User.findFirst","User.findFirstOrThrow","User.findMany","data","User.createOne","User.createMany","User.createManyAndReturn","User.updateOne","User.updateMany","User.updateManyAndReturn","create","update","User.upsertOne","User.deleteOne","User.deleteMany","having","_min","_max","User.groupBy","User.aggregate","Tutor.findUnique","Tutor.findUniqueOrThrow","Tutor.findFirst","Tutor.findFirstOrThrow","Tutor.findMany","Tutor.createOne","Tutor.createMany","Tutor.createManyAndReturn","Tutor.updateOne","Tutor.updateMany","Tutor.updateManyAndReturn","Tutor.upsertOne","Tutor.deleteOne","Tutor.deleteMany","_avg","_sum","Tutor.groupBy","Tutor.aggregate","Category.findUnique","Category.findUniqueOrThrow","Category.findFirst","Category.findFirstOrThrow","Category.findMany","Category.createOne","Category.createMany","Category.createManyAndReturn","Category.updateOne","Category.updateMany","Category.updateManyAndReturn","Category.upsertOne","Category.deleteOne","Category.deleteMany","Category.groupBy","Category.aggregate","Course.findUnique","Course.findUniqueOrThrow","Course.findFirst","Course.findFirstOrThrow","Course.findMany","Course.createOne","Course.createMany","Course.createManyAndReturn","Course.updateOne","Course.updateMany","Course.updateManyAndReturn","Course.upsertOne","Course.deleteOne","Course.deleteMany","Course.groupBy","Course.aggregate","Booking.findUnique","Booking.findUniqueOrThrow","Booking.findFirst","Booking.findFirstOrThrow","Booking.findMany","Booking.createOne","Booking.createMany","Booking.createManyAndReturn","Booking.updateOne","Booking.updateMany","Booking.updateManyAndReturn","Booking.upsertOne","Booking.deleteOne","Booking.deleteMany","Booking.groupBy","Booking.aggregate","Review.findUnique","Review.findUniqueOrThrow","Review.findFirst","Review.findFirstOrThrow","Review.findMany","Review.createOne","Review.createMany","Review.createManyAndReturn","Review.updateOne","Review.updateMany","Review.updateManyAndReturn","Review.upsertOne","Review.deleteOne","Review.deleteMany","Review.groupBy","Review.aggregate","AND","OR","NOT","id","rating","comment","studentId","tutorId","courseId","bookingId","createdAt","updatedAt","equals","in","notIn","lt","lte","gt","gte","not","contains","startsWith","endsWith","date","BookingStatus","status","categoryId","title","description","price","name","every","some","none","userId","bio","expertise","hourlyRate","experience","email","password","Role","role","avatar","isBanned","is","isNot","connectOrCreate","upsert","disconnect","delete","connect","createMany","set","updateMany","deleteMany","increment","decrement","multiply","divide"]'),
+  graph: "xgM7YA8MAADKAQAgDQAAyQEAIA8AANYBACB4AADSAQAweQAAIAAQegAA0gEAMHsBAAAAAYIBQADCAQAhgwFAAMIBACGWAQEAwQEAIZ8BAQAAAAGgAQEAwQEAIaIBAADTAaIBIqMBAQDUAQAhpAEgANUBACEBAAAAAQAgDwEAAMgBACAFAADDAQAgDQAAyQEAIA4AAMoBACB4AADFAQAweQAAAwAQegAAxQEAMHsBAMEBACGCAUAAwgEAIYMBQADCAQAhmgEBAMEBACGbAQEAwQEAIZwBAQDBAQAhnQEIAMYBACGeAQIAxwEAIQEAAAADACAPBAAA2AEAIAcAAN8BACANAADJAQAgDgAAygEAIHgAAN4BADB5AAAFABB6AADeAQAwewEAwQEAIX8BAMEBACGCAUAAwgEAIYMBQADCAQAhkgEBAMEBACGTAQEAwQEAIZQBAQDBAQAhlQEIAMYBACEEBAAAiAMAIAcAAIwDACANAADkAgAgDgAA5QIAIA8EAADYAQAgBwAA3wEAIA0AAMkBACAOAADKAQAgeAAA3gEAMHkAAAUAEHoAAN4BADB7AQAAAAF_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_ADAMAQAAwAIAIAUAAMECACANAADCAgAgDgAAwwIAIHsBAOYBACGCAUAA6QEAIYMBQADpAQAhmgEBAOYBACGbAQEA5gEAIZwBAQDmAQAhnQEIAIgCACGeAQIA5wEAIQIAAAA2ACAVAABCACAIewEA5gEAIYIBQADpAQAhgwFAAOkBACGaAQEA5gEAIZsBAQDmAQAhnAEBAOYBACGdAQgAiAIAIZ4BAgDnAQAhAgAAAAMAIBUAAEQAIAIAAAADACAVAABEACADAAAANgAgHAAAPQAgHQAAQgAgAQAAADYAIAEAAAADACAFBgAAuwIAICIAAL4CACAjAAC9AgAgNAAAvAIAIDUAAL8CACALeAAAxAEAMHkAAEsAEHoAAMQBADB7AQCqAQAhggFAAK0BACGDAUAArQEAIZoBAQCqAQAhmwEBAKoBACGcAQEAqgEAIZ0BCAC9AQAhngECAKsBACEDAAAAAwAgAgAASgAwIQAASwAgAwAAAAMAIAIAADkAMAMAADYAIAgFAADDAQAgeAAAwAEAMHkAAFEAEHoAAMABADB7AQAAAAGCAUAAwgEAIYMBQADCAQAhlgEBAAAAAQEAAABOACABAAAATgAgCAUAAMMBACB4AADAAQAweQAAUQAQegAAwAEAMHsBAMEBACGCAUAAwgEAIYMBQADCAQAhlgEBAMEBACEBBQAAugIAIAMAAABRACACAABSADADAABOACADAAAAUQAgAgAAUgAwAwAATgAgAwAAAFEAIAIAAFIAMAMAAE4AIAUFAAC5AgAgewEAAAABggFAAAAAAYMBQAAAAAGWAQEAAAABARUAAFYAIAR7AQAAAAGCAUAAAAABgwFAAAAAAZYBAQAAAAEBFQAAWAAwARUAAFgAMAUFAACsAgAgewEA5gEAIYIBQADpAQAhgwFAAOkBACGWAQEA5gEAIQIAAABOACAVAABbACAEewEA5gEAIYIBQADpAQAhgwFAAOkBACGWAQEA5gEAIQIAAABRACAVAABdACACAAAAUQAgFQAAXQAgAwAAAE4AIBwAAFYAIB0AAFsAIAEAAABOACABAAAAUQAgAwYAAKkCACAiAACrAgAgIwAAqgIAIAd4AAC_AQAweQAAZAAQegAAvwEAMHsBAKoBACGCAUAArQEAIYMBQACtAQAhlgEBAKoBACEDAAAAUQAgAgAAYwAwIQAAZAAgAwAAAFEAIAIAAFIAMAMAAE4AIAEAAAAHACABAAAABwAgAwAAAAUAIAIAAAYAMAMAAAcAIAMAAAAFACACAAAGADADAAAHACADAAAABQAgAgAABgAwAwAABwAgDAQAAKUCACAHAACmAgAgDQAApwIAIA4AAKgCACB7AQAAAAF_AQAAAAGCAUAAAAABgwFAAAAAAZIBAQAAAAGTAQEAAAABlAEBAAAAAZUBCAAAAAEBFQAAbAAgCHsBAAAAAX8BAAAAAYIBQAAAAAGDAUAAAAABkgEBAAAAAZMBAQAAAAGUAQEAAAABlQEIAAAAAQEVAABuADABFQAAbgAwDAQAAIkCACAHAACKAgAgDQAAiwIAIA4AAIwCACB7AQDmAQAhfwEA5gEAIYIBQADpAQAhgwFAAOkBACGSAQEA5gEAIZMBAQDmAQAhlAEBAOYBACGVAQgAiAIAIQIAAAAHACAVAABxACAIewEA5gEAIX8BAOYBACGCAUAA6QEAIYMBQADpAQAhkgEBAOYBACGTAQEA5gEAIZQBAQDmAQAhlQEIAIgCACECAAAABQAgFQAAcwAgAgAAAAUAIBUAAHMAIAMAAAAHACAcAABsACAdAABxACABAAAABwAgAQAAAAUAIAUGAACDAgAgIgAAhgIAICMAAIUCACA0AACEAgAgNQAAhwIAIAt4AAC8AQAweQAAegAQegAAvAEAMHsBAKoBACF_AQCqAQAhggFAAK0BACGDAUAArQEAIZIBAQCqAQAhkwEBAKoBACGUAQEAqgEAIZUBCAC9AQAhAwAAAAUAIAIAAHkAMCEAAHoAIAMAAAAFACACAAAGADADAAAHACABAAAADQAgAQAAAA0AIAMAAAALACACAAAMADADAAANACADAAAACwAgAgAADAAwAwAADQAgAwAAAAsAIAIAAAwAMAMAAA0AIAwEAACAAgAgCAAA_wEAIAkAAIECACAMAACCAgAgewEAAAABfgEAAAABfwEAAAABgAEBAAAAAYIBQAAAAAGDAUAAAAABjwFAAAAAAZEBAAAAkQECARUAAIIBACAIewEAAAABfgEAAAABfwEAAAABgAEBAAAAAYIBQAAAAAGDAUAAAAABjwFAAAAAAZEBAAAAkQECARUAAIQBADABFQAAhAEAMAwEAAD3AQAgCAAA9gEAIAkAAPgBACAMAAD5AQAgewEA5gEAIX4BAOYBACF_AQDmAQAhgAEBAOYBACGCAUAA6QEAIYMBQADpAQAhjwFAAOkBACGRAQAA9QGRASICAAAADQAgFQAAhwEAIAh7AQDmAQAhfgEA5gEAIX8BAOYBACGAAQEA5gEAIYIBQADpAQAhgwFAAOkBACGPAUAA6QEAIZEBAAD1AZEBIgIAAAALACAVAACJAQAgAgAAAAsAIBUAAIkBACADAAAADQAgHAAAggEAIB0AAIcBACABAAAADQAgAQAAAAsAIAMGAADyAQAgIgAA9AEAICMAAPMBACALeAAAuAEAMHkAAJABABB6AAC4AQAwewEAqgEAIX4BAKoBACF_AQCqAQAhgAEBAKoBACGCAUAArQEAIYMBQACtAQAhjwFAAK0BACGRAQAAuQGRASIDAAAACwAgAgAAjwEAMCEAAJABACADAAAACwAgAgAADAAwAwAADQAgAQAAABIAIAEAAAASACADAAAADwAgAgAAEQAwAwAAEgAgAwAAAA8AIAIAABEAMAMAABIAIAMAAAAPACACAAARADADAAASACANBAAA7wEAIAkAAPABACAKAADuAQAgCwAA8QEAIHsBAAAAAXwCAAAAAX0BAAAAAX4BAAAAAX8BAAAAAYABAQAAAAGBAQEAAAABggFAAAAAAYMBQAAAAAEBFQAAmAEAIAl7AQAAAAF8AgAAAAF9AQAAAAF-AQAAAAF_AQAAAAGAAQEAAAABgQEBAAAAAYIBQAAAAAGDAUAAAAABARUAAJoBADABFQAAmgEAMA0EAADrAQAgCQAA7AEAIAoAAOoBACALAADtAQAgewEA5gEAIXwCAOcBACF9AQDoAQAhfgEA5gEAIX8BAOYBACGAAQEA5gEAIYEBAQDmAQAhggFAAOkBACGDAUAA6QEAIQIAAAASACAVAACdAQAgCXsBAOYBACF8AgDnAQAhfQEA6AEAIX4BAOYBACF_AQDmAQAhgAEBAOYBACGBAQEA5gEAIYIBQADpAQAhgwFAAOkBACECAAAADwAgFQAAnwEAIAIAAAAPACAVAACfAQAgAwAAABIAIBwAAJgBACAdAACdAQAgAQAAABIAIAEAAAAPACAGBgAA4QEAICIAAOQBACAjAADjAQAgNAAA4gEAIDUAAOUBACB9AADgAQAgDHgAAKkBADB5AACmAQAQegAAqQEAMHsBAKoBACF8AgCrAQAhfQEArAEAIX4BAKoBACF_AQCqAQAhgAEBAKoBACGBAQEAqgEAIYIBQACtAQAhgwFAAK0BACEDAAAADwAgAgAApQEAMCEAAKYBACADAAAADwAgAgAAEQAwAwAAEgAgDHgAAKkBADB5AACmAQAQegAAqQEAMHsBAKoBACF8AgCrAQAhfQEArAEAIX4BAKoBACF_AQCqAQAhgAEBAKoBACGBAQEAqgEAIYIBQACtAQAhgwFAAK0BACEOBgAArwEAICIAALcBACAjAAC3AQAghAEBAAAAAYUBAQAAAASGAQEAAAAEhwEBAAAAAYgBAQAAAAGJAQEAAAABigEBAAAAAYsBAQC2AQAhjAEBAAAAAY0BAQAAAAGOAQEAAAABDQYAAK8BACAiAACvAQAgIwAArwEAIDQAALUBACA1AACvAQAghAECAAAAAYUBAgAAAASGAQIAAAAEhwECAAAAAYgBAgAAAAGJAQIAAAABigECAAAAAYsBAgC0AQAhDgYAALIBACAiAACzAQAgIwAAswEAIIQBAQAAAAGFAQEAAAAFhgEBAAAABYcBAQAAAAGIAQEAAAABiQEBAAAAAYoBAQAAAAGLAQEAsQEAIYwBAQAAAAGNAQEAAAABjgEBAAAAAQsGAACvAQAgIgAAsAEAICMAALABACCEAUAAAAABhQFAAAAABIYBQAAAAASHAUAAAAABiAFAAAAAAYkBQAAAAAGKAUAAAAABiwFAAK4BACELBgAArwEAICIAALABACAjAACwAQAghAFAAAAAAYUBQAAAAASGAUAAAAAEhwFAAAAAAYgBQAAAAAGJAUAAAAABigFAAAAAAYsBQACuAQAhCIQBAgAAAAGFAQIAAAAEhgECAAAABIcBAgAAAAGIAQIAAAABiQECAAAAAYoBAgAAAAGLAQIArwEAIQiEAUAAAAABhQFAAAAABIYBQAAAAASHAUAAAAABiAFAAAAAAYkBQAAAAAGKAUAAAAABiwFAALABACEOBgAAsgEAICIAALMBACAjAACzAQAghAEBAAAAAYUBAQAAAAWGAQEAAAAFhwEBAAAAAYgBAQAAAAGJAQEAAAABigEBAAAAAYsBAQCxAQAhjAEBAAAAAY0BAQAAAAGOAQEAAAABCIQBAgAAAAGFAQIAAAAFhgECAAAABYcBAgAAAAGIAQIAAAABiQECAAAAAYoBAgAAAAGLAQIAsgEAIQuEAQEAAAABhQEBAAAABYYBAQAAAAWHAQEAAAABiAEBAAAAAYkBAQAAAAGKAQEAAAABiwEBALMBACGMAQEAAAABjQEBAAAAAY4BAQAAAAENBgAArwEAICIAAK8BACAjAACvAQAgNAAAtQEAIDUAAK8BACCEAQIAAAABhQECAAAABIYBAgAAAASHAQIAAAABiAECAAAAAYkBAgAAAAGKAQIAAAABiwECALQBACEIhAEIAAAAAYUBCAAAAASGAQgAAAAEhwEIAAAAAYgBCAAAAAGJAQgAAAABigEIAAAAAYsBCAC1AQAhDgYAAK8BACAiAAC3AQAgIwAAtwEAIIQBAQAAAAGFAQEAAAAEhgEBAAAABIcBAQAAAAGIAQEAAAABiQEBAAAAAYoBAQAAAAGLAQEAtgEAIYwBAQAAAAGNAQEAAAABjgEBAAAAAQuEAQEAAAABhQEBAAAABIYBAQAAAASHAQEAAAABiAEBAAAAAYkBAQAAAAGKAQEAAAABiwEBALcBACGMAQEAAAABjQEBAAAAAY4BAQAAAAELeAAAuAEAMHkAAJABABB6AAC4AQAwewEAqgEAIX4BAKoBACF_AQCqAQAhgAEBAKoBACGCAUAArQEAIYMBQACtAQAhjwFAAK0BACGRAQAAuQGRASIHBgAArwEAICIAALsBACAjAAC7AQAghAEAAACRAQKFAQAAAJEBCIYBAAAAkQEIiwEAALoBkQEiBwYAAK8BACAiAAC7AQAgIwAAuwEAIIQBAAAAkQEChQEAAACRAQiGAQAAAJEBCIsBAAC6AZEBIgSEAQAAAJEBAoUBAAAAkQEIhgEAAACRAQiLAQAAuwGRASILeAAAvAEAMHkAAHoAEHoAALwBADB7AQCqAQAhfwEAqgEAIYIBQACtAQAhgwFAAK0BACGSAQEAqgEAIZMBAQCqAQAhlAEBAKoBACGVAQgAvQEAIQ0GAACvAQAgIgAAtQEAICMAALUBACA0AAC1AQAgNQAAtQEAIIQBCAAAAAGFAQgAAAAEhgEIAAAABIcBCAAAAAGIAQgAAAABiQEIAAAAAYoBCAAAAAGLAQgAvgEAIQ0GAACvAQAgIgAAtQEAICMAALUBACA0AAC1AQAgNQAAtQEAIIQBCAAAAAGFAQgAAAAEhgEIAAAABIcBCAAAAAGIAQgAAAABiQEIAAAAAYoBCAAAAAGLAQgAvgEAIQd4AAC_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_AQDBAQAhgAEBAMEBACGCAUAAwgEAIYMBQADCAQAhjwFAAMIBACGRAQAA3AGRASIEhAEAAACRAQKFAQAAAJEBCIYBAAAAkQEIiwEAALsBkQEiEgQAANgBACAJAADZAQAgCgAAyAEAIAsAANoBACB4AADXAQAweQAADwAQegAA1wEAMHsBAMEBACF8AgDHAQAhfQEA1AEAIX4BAMEBACF_AQDBAQAhgAEBAMEBACGBAQEAwQEAIYIBQADCAQAhgwFAAMIBACGlAQAADwAgpgEAAA8AIA8EAADYAQAgBwAA3wEAIA0AAMkBACAOAADKAQAgeAAA3gEAMHkAAAUAEHoAAN4BADB7AQDBAQAhfwEAwQEAIYIBQADCAQAhgwFAAMIBACGSAQEAwQEAIZMBAQDBAQAhlAEBAMEBACGVAQgAxgEAIQoFAADDAQAgeAAAwAEAMHkAAFEAEHoAAMABADB7AQDBAQAhggFAAMIBACGDAUAAwgEAIZYBAQDBAQAhpQEAAFEAIKYBAABRACAAAAAAAAABrQEBAAAAAQWtAQIAAAABsAECAAAAAbEBAgAAAAGyAQIAAAABswECAAAAAQGtAQEAAAABAa0BQAAAAAEFHAAAuQMAIB0AAMUDACCnAQAAugMAIKgBAADEAwAgqwEAAAEAIAUcAAC3AwAgHQAAwgMAIKcBAAC4AwAgqAEAAMEDACCrAQAANgAgBRwAALUDACAdAAC_AwAgpwEAALYDACCoAQAAvgMAIKsBAAAHACAFHAAAswMAIB0AALwDACCnAQAAtAMAIKgBAAC7AwAgqwEAAA0AIAMcAAC5AwAgpwEAALoDACCrAQAAAQAgAxwAALcDACCnAQAAuAMAIKsBAAA2ACADHAAAtQMAIKcBAAC2AwAgqwEAAAcAIAMcAACzAwAgpwEAALQDACCrAQAADQAgAAAAAa0BAAAAkQECBRwAAKgDACAdAACxAwAgpwEAAKkDACCoAQAAsAMAIKsBAAABACAFHAAApgMAIB0AAK4DACCnAQAApwMAIKgBAACtAwAgqwEAADYAIAUcAACkAwAgHQAAqwMAIKcBAAClAwAgqAEAAKoDACCrAQAABwAgBxwAAPoBACAdAAD9AQAgpwEAAPsBACCoAQAA_AEAIKkBAAAPACCqAQAADwAgqwEAABIAIAsEAADvAQAgCQAA8AEAIAoAAO4BACB7AQAAAAF8AgAAAAF9AQAAAAF-AQAAAAF_AQAAAAGAAQEAAAABggFAAAAAAYMBQAAAAAECAAAAEgAgHAAA-gEAIAMAAAAPACAcAAD6AQAgHQAA_gEAIA0AAAAPACAEAADrAQAgCQAA7AEAIAoAAOoBACAVAAD-AQAgewEA5gEAIXwCAOcBACF9AQDoAQAhfgEA5gEAIX8BAOYBACGAAQEA5gEAIYIBQADpAQAhgwFAAOkBACELBAAA6wEAIAkAAOwBACAKAADqAQAgewEA5gEAIXwCAOcBACF9AQDoAQAhfgEA5gEAIX8BAOYBACGAAQEA5gEAIYIBQADpAQAhgwFAAOkBACEDHAAAqAMAIKcBAACpAwAgqwEAAAEAIAMcAACmAwAgpwEAAKcDACCrAQAANgAgAxwAAKQDACCnAQAApQMAIKsBAAAHACADHAAA-gEAIKcBAAD7AQAgqwEAABIAIAAAAAAABa0BCAAAAAGwAQgAAAABsQEIAAAAAbIBCAAAAAGzAQgAAAABBRwAAJoDACAdAACiAwAgpwEAAJsDACCoAQAAoQMAIKsBAAA2ACAFHAAAmAMAIB0AAJ8DACCnAQAAmQMAIKgBAACeAwAgqwEAAE4AIAscAACZAgAwHQAAngIAMKcBAACaAgAwqAEAAJsCADCpAQAAnQIAMKoBAACdAgAwqwEAAJ0CADCsAQAAnAIAIK0BAACdAgAwrgEAAJ8CADCvAQAAoAIAMAscAACNAgAwHQAAkgIAMKcBAACOAgAwqAEAAI8CADCpAQAAkQIAMKoBAACRAgAwqwEAAJECADCsAQAAkAIAIK0BAACRAgAwrgEAAJMCADCvAQAAlAIAMAsEAADvAQAgCgAA7gEAIAsAAPEBACB7AQAAAAF8AgAAAAF9AQAAAAF-AQAAAAF_AQAAAAGBAQEAAAABggFAAAAAAYMBQAAAAAECAAAAEgAgHAAAmAIAIAMAAAASACAcAACYAgAgHQAAlwIAIAEVAACdAwAwEAQAANgBACAJAADZAQAgCgAAyAEAIAsAANoBACB4AADXAQAweQAADwAQegAA1wEAMHsBAAAAAXwCAMcBACF9AQDUAQAhfgEAwQEAIX8BAMEBACGAAQEAwQEAIYEBAQAAAAGCAUAAwgEAIYMBQADCAQAhAgAAABIAIBUAAJcCACACAAAAlQIAIBUAAJYCACAMeAAAlAIAMHkAAJUCABB6AACUAgAwewEAwQEAIXwCAMcBACF9AQDUAQAhfgEAwQEAIX8BAMEBACGAAQEAwQEAIYEBAQDBAQAhggFAAMIBACGDAUAAwgEAIQx4AACUAgAweQAAlQIAEHoAAJQCADB7AQDBAQAhfAIAxwEAIX0BANQBACF-AQDBAQAhfwEAwQEAIYABAQDBAQAhgQEBAMEBACGCAUAAwgEAIYMBQADCAQAhCHsBAOYBACF8AgDnAQAhfQEA6AEAIX4BAOYBACF_AQDmAQAhgQEBAOYBACGCAUAA6QEAIYMBQADpAQAhCwQAAOsBACAKAADqAQAgCwAA7QEAIHsBAOYBACF8AgDnAQAhfQEA6AEAIX4BAOYBACF_AQDmAQAhgQEBAOYBACGCAUAA6QEAIYMBQADpAQAhCwQAAO8BACAKAADuAQAgCwAA8QEAIHsBAAAAAXwCAAAAAX0BAAAAAX4BAAAAAX8BAAAAAYEBAQAAAAGCAUAAAAABgwFAAAAAAQoEAACAAgAgCAAA_wEAIAwAAIICACB7AQAAAAF-AQAAAAF_AQAAAAGCAUAAAAABgwFAAAAAAY8BQAAAAAGRAQAAAJEBAgIAAAANACAcAACkAgAgAwAAAA0AIBwAAKQCACAdAACjAgAgARUAAJwDADAPBAAA2AEAIAgAAMgBACAJAADZAQAgDAAA3QEAIHgAANsBADB5AAALABB6AADbAQAwewEAAAABfgEAwQEAIX8BAMEBACGAAQEAwQEAIYIBQADCAQAhgwFAAMIBACGPAUAAwgEAIZEBAADcAZEBIgIAAAANACAVAACjAgAgAgAAAKECACAVAACiAgAgC3gAAKACADB5AAChAgAQegAAoAIAMHsBAMEBACF-AQDBAQAhfwEAwQEAIYABAQDBAQAhggFAAMIBACGDAUAAwgEAIY8BQADCAQAhkQEAANwBkQEiC3gAAKACADB5AAChAgAQegAAoAIAMHsBAMEBACF-AQDBAQAhfwEAwQEAIYABAQDBAQAhggFAAMIBACGDAUAAwgEAIY8BQADCAQAhkQEAANwBkQEiB3sBAOYBACF-AQDmAQAhfwEA5gEAIYIBQADpAQAhgwFAAOkBACGPAUAA6QEAIZEBAAD1AZEBIgoEAAD3AQAgCAAA9gEAIAwAAPkBACB7AQDmAQAhfgEA5gEAIX8BAOYBACGCAUAA6QEAIYMBQADpAQAhjwFAAOkBACGRAQAA9QGRASIKBAAAgAIAIAgAAP8BACAMAACCAgAgewEAAAABfgEAAAABfwEAAAABggFAAAAAAYMBQAAAAAGPAUAAAAABkQEAAACRAQIDHAAAmgMAIKcBAACbAwAgqwEAADYAIAMcAACYAwAgpwEAAJkDACCrAQAATgAgBBwAAJkCADCnAQAAmgIAMKsBAACdAgAwrAEAAJwCACAEHAAAjQIAMKcBAACOAgAwqwEAAJECADCsAQAAkAIAIAAAAAscAACtAgAwHQAAsgIAMKcBAACuAgAwqAEAAK8CADCpAQAAsQIAMKoBAACxAgAwqwEAALECADCsAQAAsAIAIK0BAACxAgAwrgEAALMCADCvAQAAtAIAMAoEAAClAgAgDQAApwIAIA4AAKgCACB7AQAAAAF_AQAAAAGCAUAAAAABgwFAAAAAAZMBAQAAAAGUAQEAAAABlQEIAAAAAQIAAAAHACAcAAC4AgAgAwAAAAcAIBwAALgCACAdAAC3AgAgARUAAJcDADAPBAAA2AEAIAcAAN8BACANAADJAQAgDgAAygEAIHgAAN4BADB5AAAFABB6AADeAQAwewEAAAABfwEAwQEAIYIBQADCAQAhgwFAAMIBACGSAQEAwQEAIZMBAQDBAQAhlAEBAMEBACGVAQgAxgEAIQIAAAAHACAVAAC3AgAgAgAAALUCACAVAAC2AgAgC3gAALQCADB5AAC1AgAQegAAtAIAMHsBAMEBACF_AQDBAQAhggFAAMIBACGDAUAAwgEAIZIBAQDBAQAhkwEBAMEBACGUAQEAwQEAIZUBCADGAQAhC3gAALQCADB5AAC1AgAQegAAtAIAMHsBAMEBACF_AQDBAQAhggFAAMIBACGDAUAAwgEAIZIBAQDBAQAhkwEBAMEBACGUAQEAwQEAIZUBCADGAQAhB3sBAOYBACF_AQDmAQAhggFAAOkBACGDAUAA6QEAIZMBAQDmAQAhlAEBAOYBACGVAQgAiAIAIQoEAACJAgAgDQAAiwIAIA4AAIwCACB7AQDmAQAhfwEA5gEAIYIBQADpAQAhgwFAAOkBACGTAQEA5gEAIZQBAQDmAQAhlQEIAIgCACEKBAAApQIAIA0AAKcCACAOAACoAgAgewEAAAABfwEAAAABggFAAAAAAYMBQAAAAAGTAQEAAAABlAEBAAAAAZUBCAAAAAEEHAAArQIAMKcBAACuAgAwqwEAALECADCsAQAAsAIAIAAAAAAAAAUcAACPAwAgHQAAlQMAIKcBAACQAwAgqAEAAJQDACCrAQAAAQAgCxwAANYCADAdAADaAgAwpwEAANcCADCoAQAA2AIAMKkBAACxAgAwqgEAALECADCrAQAAsQIAMKwBAADZAgAgrQEAALECADCuAQAA2wIAMK8BAAC0AgAwCxwAAM0CADAdAADRAgAwpwEAAM4CADCoAQAAzwIAMKkBAACdAgAwqgEAAJ0CADCrAQAAnQIAMKwBAADQAgAgrQEAAJ0CADCuAQAA0gIAMK8BAACgAgAwCxwAAMQCADAdAADIAgAwpwEAAMUCADCoAQAAxgIAMKkBAACRAgAwqgEAAJECADCrAQAAkQIAMKwBAADHAgAgrQEAAJECADCuAQAAyQIAMK8BAACUAgAwCwkAAPABACAKAADuAQAgCwAA8QEAIHsBAAAAAXwCAAAAAX0BAAAAAX4BAAAAAYABAQAAAAGBAQEAAAABggFAAAAAAYMBQAAAAAECAAAAEgAgHAAAzAIAIAMAAAASACAcAADMAgAgHQAAywIAIAEVAACTAwAwAgAAABIAIBUAAMsCACACAAAAlQIAIBUAAMoCACAIewEA5gEAIXwCAOcBACF9AQDoAQAhfgEA5gEAIYABAQDmAQAhgQEBAOYBACGCAUAA6QEAIYMBQADpAQAhCwkAAOwBACAKAADqAQAgCwAA7QEAIHsBAOYBACF8AgDnAQAhfQEA6AEAIX4BAOYBACGAAQEA5gEAIYEBAQDmAQAhggFAAOkBACGDAUAA6QEAIQsJAADwAQAgCgAA7gEAIAsAAPEBACB7AQAAAAF8AgAAAAF9AQAAAAF-AQAAAAGAAQEAAAABgQEBAAAAAYIBQAAAAAGDAUAAAAABCggAAP8BACAJAACBAgAgDAAAggIAIHsBAAAAAX4BAAAAAYABAQAAAAGCAUAAAAABgwFAAAAAAY8BQAAAAAGRAQAAAJEBAgIAAAANACAcAADVAgAgAwAAAA0AIBwAANUCACAdAADUAgAgARUAAJIDADACAAAADQAgFQAA1AIAIAIAAAChAgAgFQAA0wIAIAd7AQDmAQAhfgEA5gEAIYABAQDmAQAhggFAAOkBACGDAUAA6QEAIY8BQADpAQAhkQEAAPUBkQEiCggAAPYBACAJAAD4AQAgDAAA-QEAIHsBAOYBACF-AQDmAQAhgAEBAOYBACGCAUAA6QEAIYMBQADpAQAhjwFAAOkBACGRAQAA9QGRASIKCAAA_wEAIAkAAIECACAMAACCAgAgewEAAAABfgEAAAABgAEBAAAAAYIBQAAAAAGDAUAAAAABjwFAAAAAAZEBAAAAkQECCgcAAKYCACANAACnAgAgDgAAqAIAIHsBAAAAAYIBQAAAAAGDAUAAAAABkgEBAAAAAZMBAQAAAAGUAQEAAAABlQEIAAAAAQIAAAAHACAcAADeAgAgAwAAAAcAIBwAAN4CACAdAADdAgAgARUAAJEDADACAAAABwAgFQAA3QIAIAIAAAC1AgAgFQAA3AIAIAd7AQDmAQAhggFAAOkBACGDAUAA6QEAIZIBAQDmAQAhkwEBAOYBACGUAQEA5gEAIZUBCACIAgAhCgcAAIoCACANAACLAgAgDgAAjAIAIHsBAOYBACGCAUAA6QEAIYMBQADpAQAhkgEBAOYBACGTAQEA5gEAIZQBAQDmAQAhlQEIAIgCACEKBwAApgIAIA0AAKcCACAOAACoAgAgewEAAAABggFAAAAAAYMBQAAAAAGSAQEAAAABkwEBAAAAAZQBAQAAAAGVAQgAAAABAxwAAI8DACCnAQAAkAMAIKsBAAABACAEHAAA1gIAMKcBAADXAgAwqwEAALECADCsAQAA2QIAIAQcAADNAgAwpwEAAM4CADCrAQAAnQIAMKwBAADQAgAgBBwAAMQCADCnAQAAxQIAMKsBAACRAgAwrAEAAMcCACAEDAAA5QIAIA0AAOQCACAPAACIAwAgowEAAOABACAAAAAAAAGtAQAAAKIBAgGtASAAAAABBxwAAIADACAdAACDAwAgpwEAAIEDACCoAQAAggMAIKkBAAADACCqAQAAAwAgqwEAADYAIAscAAD3AgAwHQAA-wIAMKcBAAD4AgAwqAEAAPkCADCpAQAAnQIAMKoBAACdAgAwqwEAAJ0CADCsAQAA-gIAIK0BAACdAgAwrgEAAPwCADCvAQAAoAIAMAscAADuAgAwHQAA8gIAMKcBAADvAgAwqAEAAPACADCpAQAAkQIAMKoBAACRAgAwqwEAAJECADCsAQAA8QIAIK0BAACRAgAwrgEAAPMCADCvAQAAlAIAMAsEAADvAQAgCQAA8AEAIAsAAPEBACB7AQAAAAF8AgAAAAF9AQAAAAF_AQAAAAGAAQEAAAABgQEBAAAAAYIBQAAAAAGDAUAAAAABAgAAABIAIBwAAPYCACADAAAAEgAgHAAA9gIAIB0AAPUCACABFQAAjgMAMAIAAAASACAVAAD1AgAgAgAAAJUCACAVAAD0AgAgCHsBAOYBACF8AgDnAQAhfQEA6AEAIX8BAOYBACGAAQEA5gEAIYEBAQDmAQAhggFAAOkBACGDAUAA6QEAIQsEAADrAQAgCQAA7AEAIAsAAO0BACB7AQDmAQAhfAIA5wEAIX0BAOgBACF_AQDmAQAhgAEBAOYBACGBAQEA5gEAIYIBQADpAQAhgwFAAOkBACELBAAA7wEAIAkAAPABACALAADxAQAgewEAAAABfAIAAAABfQEAAAABfwEAAAABgAEBAAAAAYEBAQAAAAGCAUAAAAABgwFAAAAAAQoEAACAAgAgCQAAgQIAIAwAAIICACB7AQAAAAF_AQAAAAGAAQEAAAABggFAAAAAAYMBQAAAAAGPAUAAAAABkQEAAACRAQICAAAADQAgHAAA_wIAIAMAAAANACAcAAD_AgAgHQAA_gIAIAEVAACNAwAwAgAAAA0AIBUAAP4CACACAAAAoQIAIBUAAP0CACAHewEA5gEAIX8BAOYBACGAAQEA5gEAIYIBQADpAQAhgwFAAOkBACGPAUAA6QEAIZEBAAD1AZEBIgoEAAD3AQAgCQAA-AEAIAwAAPkBACB7AQDmAQAhfwEA5gEAIYABAQDmAQAhggFAAOkBACGDAUAA6QEAIY8BQADpAQAhkQEAAPUBkQEiCgQAAIACACAJAACBAgAgDAAAggIAIHsBAAAAAX8BAAAAAYABAQAAAAGCAUAAAAABgwFAAAAAAY8BQAAAAAGRAQAAAJEBAgoFAADgAgAgDQAA4QIAIA4AAOICACB7AQAAAAGCAUAAAAABgwFAAAAAAZsBAQAAAAGcAQEAAAABnQEIAAAAAZ4BAgAAAAECAAAANgAgHAAAgAMAIAMAAAADACAcAACAAwAgHQAAhAMAIAwAAAADACAFAADBAgAgDQAAwgIAIA4AAMMCACAVAACEAwAgewEA5gEAIYIBQADpAQAhgwFAAOkBACGbAQEA5gEAIZwBAQDmAQAhnQEIAIgCACGeAQIA5wEAIQoFAADBAgAgDQAAwgIAIA4AAMMCACB7AQDmAQAhggFAAOkBACGDAUAA6QEAIZsBAQDmAQAhnAEBAOYBACGdAQgAiAIAIZ4BAgDnAQAhAxwAAIADACCnAQAAgQMAIKsBAAA2ACAEHAAA9wIAMKcBAAD4AgAwqwEAAJ0CADCsAQAA-gIAIAQcAADuAgAwpwEAAO8CADCrAQAAkQIAMKwBAADxAgAgBAEAAOMCACAFAAC6AgAgDQAA5AIAIA4AAOUCACAEBAAAiAMAIAcAAIwDACANAADkAgAgDgAA5QIAIAQEAACIAwAgCAAA4wIAIAkAAIkDACAMAACLAwAgBQQAAIgDACAJAACJAwAgCgAA4wIAIAsAAIoDACB9AADgAQAgAQUAALoCACAHewEAAAABfwEAAAABgAEBAAAAAYIBQAAAAAGDAUAAAAABjwFAAAAAAZEBAAAAkQECCHsBAAAAAXwCAAAAAX0BAAAAAX8BAAAAAYABAQAAAAGBAQEAAAABggFAAAAAAYMBQAAAAAELDAAAhwMAIA0AAIYDACB7AQAAAAGCAUAAAAABgwFAAAAAAZYBAQAAAAGfAQEAAAABoAEBAAAAAaIBAAAAogECowEBAAAAAaQBIAAAAAECAAAAAQAgHAAAjwMAIAd7AQAAAAGCAUAAAAABgwFAAAAAAZIBAQAAAAGTAQEAAAABlAEBAAAAAZUBCAAAAAEHewEAAAABfgEAAAABgAEBAAAAAYIBQAAAAAGDAUAAAAABjwFAAAAAAZEBAAAAkQECCHsBAAAAAXwCAAAAAX0BAAAAAX4BAAAAAYABAQAAAAGBAQEAAAABggFAAAAAAYMBQAAAAAEDAAAAIAAgHAAAjwMAIB0AAJYDACANAAAAIAAgDAAA7QIAIA0AAOwCACAVAACWAwAgewEA5gEAIYIBQADpAQAhgwFAAOkBACGWAQEA5gEAIZ8BAQDmAQAhoAEBAOYBACGiAQAA6QKiASKjAQEA6AEAIaQBIADqAgAhCwwAAO0CACANAADsAgAgewEA5gEAIYIBQADpAQAhgwFAAOkBACGWAQEA5gEAIZ8BAQDmAQAhoAEBAOYBACGiAQAA6QKiASKjAQEA6AEAIaQBIADqAgAhB3sBAAAAAX8BAAAAAYIBQAAAAAGDAUAAAAABkwEBAAAAAZQBAQAAAAGVAQgAAAABBHsBAAAAAYIBQAAAAAGDAUAAAAABlgEBAAAAAQIAAABOACAcAACYAwAgCwEAAN8CACANAADhAgAgDgAA4gIAIHsBAAAAAYIBQAAAAAGDAUAAAAABmgEBAAAAAZsBAQAAAAGcAQEAAAABnQEIAAAAAZ4BAgAAAAECAAAANgAgHAAAmgMAIAd7AQAAAAF-AQAAAAF_AQAAAAGCAUAAAAABgwFAAAAAAY8BQAAAAAGRAQAAAJEBAgh7AQAAAAF8AgAAAAF9AQAAAAF-AQAAAAF_AQAAAAGBAQEAAAABggFAAAAAAYMBQAAAAAEDAAAAUQAgHAAAmAMAIB0AAKADACAGAAAAUQAgFQAAoAMAIHsBAOYBACGCAUAA6QEAIYMBQADpAQAhlgEBAOYBACEEewEA5gEAIYIBQADpAQAhgwFAAOkBACGWAQEA5gEAIQMAAAADACAcAACaAwAgHQAAowMAIA0AAAADACABAADAAgAgDQAAwgIAIA4AAMMCACAVAACjAwAgewEA5gEAIYIBQADpAQAhgwFAAOkBACGaAQEA5gEAIZsBAQDmAQAhnAEBAOYBACGdAQgAiAIAIZ4BAgDnAQAhCwEAAMACACANAADCAgAgDgAAwwIAIHsBAOYBACGCAUAA6QEAIYMBQADpAQAhmgEBAOYBACGbAQEA5gEAIZwBAQDmAQAhnQEIAIgCACGeAQIA5wEAIQsEAAClAgAgBwAApgIAIA4AAKgCACB7AQAAAAF_AQAAAAGCAUAAAAABgwFAAAAAAZIBAQAAAAGTAQEAAAABlAEBAAAAAZUBCAAAAAECAAAABwAgHAAApAMAIAsBAADfAgAgBQAA4AIAIA4AAOICACB7AQAAAAGCAUAAAAABgwFAAAAAAZoBAQAAAAGbAQEAAAABnAEBAAAAAZ0BCAAAAAGeAQIAAAABAgAAADYAIBwAAKYDACALDAAAhwMAIA8AAIUDACB7AQAAAAGCAUAAAAABgwFAAAAAAZYBAQAAAAGfAQEAAAABoAEBAAAAAaIBAAAAogECowEBAAAAAaQBIAAAAAECAAAAAQAgHAAAqAMAIAMAAAAFACAcAACkAwAgHQAArAMAIA0AAAAFACAEAACJAgAgBwAAigIAIA4AAIwCACAVAACsAwAgewEA5gEAIX8BAOYBACGCAUAA6QEAIYMBQADpAQAhkgEBAOYBACGTAQEA5gEAIZQBAQDmAQAhlQEIAIgCACELBAAAiQIAIAcAAIoCACAOAACMAgAgewEA5gEAIX8BAOYBACGCAUAA6QEAIYMBQADpAQAhkgEBAOYBACGTAQEA5gEAIZQBAQDmAQAhlQEIAIgCACEDAAAAAwAgHAAApgMAIB0AAK8DACANAAAAAwAgAQAAwAIAIAUAAMECACAOAADDAgAgFQAArwMAIHsBAOYBACGCAUAA6QEAIYMBQADpAQAhmgEBAOYBACGbAQEA5gEAIZwBAQDmAQAhnQEIAIgCACGeAQIA5wEAIQsBAADAAgAgBQAAwQIAIA4AAMMCACB7AQDmAQAhggFAAOkBACGDAUAA6QEAIZoBAQDmAQAhmwEBAOYBACGcAQEA5gEAIZ0BCACIAgAhngECAOcBACEDAAAAIAAgHAAAqAMAIB0AALIDACANAAAAIAAgDAAA7QIAIA8AAOsCACAVAACyAwAgewEA5gEAIYIBQADpAQAhgwFAAOkBACGWAQEA5gEAIZ8BAQDmAQAhoAEBAOYBACGiAQAA6QKiASKjAQEA6AEAIaQBIADqAgAhCwwAAO0CACAPAADrAgAgewEA5gEAIYIBQADpAQAhgwFAAOkBACGWAQEA5gEAIZ8BAQDmAQAhoAEBAOYBACGiAQAA6QKiASKjAQEA6AEAIaQBIADqAgAhCwQAAIACACAIAAD_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-WQs_WhxAXARBXgtCXx1DYAREYQRFYgtGZR5HZiJIZwNJaANKaQNLagNMawNNbQNObwtPcCNQcgNRdAtSdSRTdgNUdwNVeAtWeyVXfCtYfQZZfgZafwZbgAEGXIEBBl2DAQZehQELX4YBLGCIAQZhigELYosBLWOMAQZkjQEGZY4BC2aRAS5nkgEyaJMBB2mUAQdqlQEHa5YBB2yXAQdtmQEHbpsBC2-cATNwngEHcaABC3KhATRzogEHdKMBB3WkAQt2pwE1d6gBOw"
+};
+async function decodeBase64AsWasm(wasmBase64) {
+  const { Buffer: Buffer2 } = await import("buffer");
+  const wasmArray = Buffer2.from(wasmBase64, "base64");
+  return new WebAssembly.Module(wasmArray);
+}
+config.compilerWasm = {
+  getRuntime: async () => await import("@prisma/client/runtime/query_compiler_fast_bg.postgresql.mjs"),
+  getQueryCompilerWasmModule: async () => {
+    const { wasm } = await import("@prisma/client/runtime/query_compiler_fast_bg.postgresql.wasm-base64.mjs");
+    return await decodeBase64AsWasm(wasm);
+  },
+  importName: "./query_compiler_fast_bg.js"
+};
+function getPrismaClientClass() {
+  return runtime.getPrismaClient(config);
+}
+
+// generated/prisma/internal/prismaNamespace.ts
+var prismaNamespace_exports = {};
+__export(prismaNamespace_exports, {
+  AnyNull: () => AnyNull2,
+  BookingScalarFieldEnum: () => BookingScalarFieldEnum,
+  CategoryScalarFieldEnum: () => CategoryScalarFieldEnum,
+  CourseScalarFieldEnum: () => CourseScalarFieldEnum,
+  DbNull: () => DbNull2,
+  Decimal: () => Decimal2,
+  JsonNull: () => JsonNull2,
+  ModelName: () => ModelName,
+  NullTypes: () => NullTypes2,
+  NullsOrder: () => NullsOrder,
+  PrismaClientInitializationError: () => PrismaClientInitializationError2,
+  PrismaClientKnownRequestError: () => PrismaClientKnownRequestError2,
+  PrismaClientRustPanicError: () => PrismaClientRustPanicError2,
+  PrismaClientUnknownRequestError: () => PrismaClientUnknownRequestError2,
+  PrismaClientValidationError: () => PrismaClientValidationError2,
+  QueryMode: () => QueryMode,
+  ReviewScalarFieldEnum: () => ReviewScalarFieldEnum,
+  SortOrder: () => SortOrder,
+  Sql: () => Sql2,
+  TransactionIsolationLevel: () => TransactionIsolationLevel,
+  TutorScalarFieldEnum: () => TutorScalarFieldEnum,
+  UserScalarFieldEnum: () => UserScalarFieldEnum,
+  defineExtension: () => defineExtension,
+  empty: () => empty2,
+  getExtensionContext: () => getExtensionContext,
+  join: () => join2,
+  prismaVersion: () => prismaVersion,
+  raw: () => raw2,
+  sql: () => sql
+});
+import * as runtime2 from "@prisma/client/runtime/client";
+var PrismaClientKnownRequestError2 = runtime2.PrismaClientKnownRequestError;
+var PrismaClientUnknownRequestError2 = runtime2.PrismaClientUnknownRequestError;
+var PrismaClientRustPanicError2 = runtime2.PrismaClientRustPanicError;
+var PrismaClientInitializationError2 = runtime2.PrismaClientInitializationError;
+var PrismaClientValidationError2 = runtime2.PrismaClientValidationError;
+var sql = runtime2.sqltag;
+var empty2 = runtime2.empty;
+var join2 = runtime2.join;
+var raw2 = runtime2.raw;
+var Sql2 = runtime2.Sql;
+var Decimal2 = runtime2.Decimal;
+var getExtensionContext = runtime2.Extensions.getExtensionContext;
+var prismaVersion = {
+  client: "7.4.1",
+  engine: "55ae170b1ced7fc6ed07a15f110549408c501bb3"
+};
+var NullTypes2 = {
+  DbNull: runtime2.NullTypes.DbNull,
+  JsonNull: runtime2.NullTypes.JsonNull,
+  AnyNull: runtime2.NullTypes.AnyNull
+};
+var DbNull2 = runtime2.DbNull;
+var JsonNull2 = runtime2.JsonNull;
+var AnyNull2 = runtime2.AnyNull;
+var ModelName = {
+  User: "User",
+  Tutor: "Tutor",
+  Category: "Category",
+  Course: "Course",
+  Booking: "Booking",
+  Review: "Review"
+};
+var TransactionIsolationLevel = runtime2.makeStrictEnum({
+  ReadUncommitted: "ReadUncommitted",
+  ReadCommitted: "ReadCommitted",
+  RepeatableRead: "RepeatableRead",
+  Serializable: "Serializable"
+});
+var UserScalarFieldEnum = {
+  id: "id",
+  name: "name",
+  email: "email",
+  password: "password",
+  role: "role",
+  avatar: "avatar",
+  isBanned: "isBanned",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt"
+};
+var TutorScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  bio: "bio",
+  expertise: "expertise",
+  hourlyRate: "hourlyRate",
+  experience: "experience",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt"
+};
+var CategoryScalarFieldEnum = {
+  id: "id",
+  name: "name",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt"
+};
+var CourseScalarFieldEnum = {
+  id: "id",
+  tutorId: "tutorId",
+  categoryId: "categoryId",
+  title: "title",
+  description: "description",
+  price: "price",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt"
+};
+var BookingScalarFieldEnum = {
+  id: "id",
+  studentId: "studentId",
+  tutorId: "tutorId",
+  courseId: "courseId",
+  date: "date",
+  status: "status",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt"
+};
+var ReviewScalarFieldEnum = {
+  id: "id",
+  rating: "rating",
+  comment: "comment",
+  studentId: "studentId",
+  tutorId: "tutorId",
+  courseId: "courseId",
+  bookingId: "bookingId",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt"
+};
+var SortOrder = {
+  asc: "asc",
+  desc: "desc"
+};
+var QueryMode = {
+  default: "default",
+  insensitive: "insensitive"
+};
+var NullsOrder = {
+  first: "first",
+  last: "last"
+};
+var defineExtension = runtime2.Extensions.defineExtension;
+
+// generated/prisma/enums.ts
+var BookingStatus = {
+  PENDING: "PENDING",
+  ACCEPTED: "ACCEPTED",
+  REJECTED: "REJECTED",
+  COMPLETED: "COMPLETED",
+  CANCELLED: "CANCELLED"
+};
+
+// generated/prisma/client.ts
+globalThis["__dirname"] = path.dirname(fileURLToPath(import.meta.url));
+var PrismaClient = getPrismaClientClass();
+
+// src/middlewares/globalErrorHandler.ts
+function errorHandler(err, req, res, next) {
+  let statusCode = 500;
+  let message = err.message || "Internal server Error!";
+  let errorDetails = err;
+  if (err instanceof ZodError) {
+    statusCode = 400;
+    message = "Validation Failed";
+    errorDetails = err.issues;
+  } else if (err instanceof prismaNamespace_exports.PrismaClientKnownRequestError) {
+    statusCode = 400;
+    message = "Prisma Request Error";
+    errorDetails = err.meta;
+  } else if (err instanceof prismaNamespace_exports.PrismaClientValidationError) {
+    statusCode = 400;
+    message = "Invalid input data or missing fields";
+    errorDetails = err.message;
+  } else if (err instanceof Error) {
+    statusCode = 400;
+    message = err.message;
+    errorDetails = process.env.NODE_ENV === "development" ? err.stack : {};
+  }
+  res.status(statusCode).json({
+    success: false,
+    message,
+    error: errorDetails
+  });
+}
+
+// src/middlewares/notFound.ts
+function notFound(req, res) {
+  res.status(404).json({
+    message: "This route is not available!!",
+    path: req.originalUrl,
+    date: Date()
+  });
+}
+
+// src/routes/index.ts
+import { Router } from "express";
+
+// src/modules/admin/admin.routes.ts
+import express from "express";
+
+// src/middlewares/auth.middleware.ts
+import jwt from "jsonwebtoken";
+
+// src/lib/prisma.ts
+import { PrismaPg } from "@prisma/adapter-pg";
+
+// node_modules/dotenv/config.js
+(function() {
+  require_main().config(
+    Object.assign(
+      {},
+      require_env_options(),
+      require_cli_options()(process.argv)
+    )
+  );
+})();
+
+// src/lib/prisma.ts
+var connectionString = process.env.DATABASE_URL;
+var adapter = new PrismaPg({ connectionString });
+var prisma = new PrismaClient({ adapter });
+
+// src/middlewares/auth.middleware.ts
+var secret = process.env.JWT_SECRET || "your-secret-key";
+var auth = (...roles) => {
+  return async (req, res, next) => {
+    try {
+      const token = req.headers.authorization;
+      if (!token) {
+        throw new Error("Token not found!!");
+      }
+      const decoded = jwt.verify(token, secret);
+      const userData = await prisma.user.findUnique({
+        where: {
+          email: decoded.email
+        }
+      });
+      if (!userData) {
+        throw new Error("Unauthorized!");
+      }
+      if (roles.length && !roles.includes(decoded.role)) {
+        throw new Error("Unauthorized");
+      }
+      req.user = userData;
+      next();
+    } catch (err) {
+      next(err);
+    }
+  };
+};
+var auth_middleware_default = auth;
+
+// src/middlewares/validate.ts
+var validateRequest = (schema) => {
+  return (req, res, next) => {
+    try {
+      schema.parse({
+        body: req.body,
+        params: req.params,
+        query: req.query
+      });
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+};
+
+// src/utils/sendResponse.ts
+var sendResponse = (res, data) => {
+  const { statusCode, success, message, data: DataResponse } = data;
+  res.status(statusCode || 200).json({
+    success,
+    message,
+    data: DataResponse
+  });
+};
+var sendResponse_default = sendResponse;
+
+// src/modules/admin/admin.service.ts
+var getAllUsers = async () => {
+  return prisma.user.findMany({
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      avatar: true,
+      createdAt: true,
+      isBanned: true
+    },
+    orderBy: { createdAt: "desc" }
+  });
+};
+var updateUserStatus = async (id, isBanned) => {
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) throw new Error("User not found");
+  return prisma.user.update({
+    where: { id },
+    data: { isBanned }
+  });
+};
+var getAllBookings = async () => {
+  return prisma.booking.findMany({
+    include: {
+      student: { select: { name: true, email: true } },
+      tutor: {
+        include: {
+          user: { select: { name: true, email: true } }
+        }
+      },
+      course: { select: { title: true, price: true } }
+    },
+    orderBy: { createdAt: "desc" }
+  });
+};
+var deleteCourse = async (id) => {
+  const course = await prisma.course.findUnique({ where: { id } });
+  if (!course) throw new Error("Course not found");
+  return prisma.course.delete({
+    where: { id }
+  });
+};
+var getSystemStats = async () => {
+  const [totalUsers, totalTutors, totalBookings, totalRevenue] = await Promise.all([
+    prisma.user.count(),
+    prisma.tutor.count(),
+    prisma.booking.count(),
+    prisma.course.aggregate({ _sum: { price: true } })
+  ]);
+  return {
+    totalUsers,
+    totalTutors,
+    totalBookings,
+    totalRevenue: totalRevenue._sum.price || 0
+  };
+};
+var AdminService = {
+  getAllUsers,
+  updateUserStatus,
+  getAllBookings,
+  deleteCourse,
+  getSystemStats
+};
+
+// src/modules/admin/admin.controller.ts
+var getAllUsers2 = async (req, res, next) => {
+  try {
+    const result = await AdminService.getAllUsers();
+    sendResponse_default(res, {
+      statusCode: 200,
+      success: true,
+      message: "All users retrieved successfully",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var updateUserStatus2 = async (req, res, next) => {
+  try {
+    const result = await AdminService.updateUserStatus(
+      req.params.userId,
+      req.body.isBanned
+    );
+    sendResponse_default(res, {
+      statusCode: 200,
+      success: true,
+      message: "User status updated successfully",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var getAllBookings2 = async (req, res, next) => {
+  try {
+    const result = await AdminService.getAllBookings();
+    sendResponse_default(res, {
+      statusCode: 200,
+      success: true,
+      message: "All bookings retrieved successfully",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var deleteCourse2 = async (req, res, next) => {
+  try {
+    const result = await AdminService.deleteCourse(
+      req.params.courseId
+    );
+    sendResponse_default(res, {
+      statusCode: 200,
+      success: true,
+      message: "Course deleted successfully",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var AdminController = {
+  getAllUsers: getAllUsers2,
+  updateUserStatus: updateUserStatus2,
+  getAllBookings: getAllBookings2,
+  deleteCourse: deleteCourse2
+};
+
+// src/modules/admin/admin.validation.ts
+import { z } from "zod";
+var updateUserStatusValidation = z.object({
+  body: z.object({
+    isBanned: z.boolean()
+  })
+});
+
+// src/modules/admin/admin.routes.ts
+var router = express.Router();
+router.get("/users", auth_middleware_default("ADMIN" /* admin */), AdminController.getAllUsers);
+router.patch(
+  "/users/:userId",
+  auth_middleware_default("ADMIN" /* admin */),
+  validateRequest(updateUserStatusValidation),
+  AdminController.updateUserStatus
+);
+router.get("/bookings", auth_middleware_default("ADMIN" /* admin */), AdminController.getAllBookings);
+router.delete(
+  "/courses/:courseId",
+  auth_middleware_default("ADMIN" /* admin */),
+  AdminController.deleteCourse
+);
+var AdminRoutes = router;
+
+// src/modules/auth/auth.routes.ts
+import express2 from "express";
+
+// src/modules/auth/auth.service.ts
+import bcrypt from "bcryptjs";
+import jwt2 from "jsonwebtoken";
+
+// src/config/index.ts
+var import_dotenv = __toESM(require_main());
+import path2 from "path";
+import_dotenv.default.config({ path: path2.join(process.cwd(), ".env") });
+function requiredEnv(key) {
+  const value = process.env[key];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+  return value;
+}
+var config2 = {
+  port: process.env.PORT || "5000",
+  database_url: requiredEnv("DATABASE_URL"),
+  jwt: {
+    secret: requiredEnv("JWT_SECRET"),
+    expiresIn: process.env.JWT_EXPIRES_IN || "2d"
+  }
+};
+var config_default = config2;
+
+// src/modules/auth/auth.service.ts
+var createUser = async (payload) => {
+  const hashPassword = await bcrypt.hash(payload.password, 8);
+  const result = await prisma.user.create({
+    data: {
+      ...payload,
+      password: hashPassword
+    }
+  });
+  const { password, ...newPassword } = result;
+  return newPassword;
+};
+var loginUser = async (payload) => {
+  const user = await prisma.user.findUnique({
+    where: {
+      email: payload.email
+    }
+  });
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const isPasswordMatched = await bcrypt.compare(
+    payload.password,
+    user.password
+  );
+  if (!isPasswordMatched) {
+    throw new Error("Invalid credentials!!");
+  }
+  const userData = {
+    id: user.id,
+    name: user.name,
+    role: user.role,
+    email: user.email
+  };
+  const token = jwt2.sign(userData, config_default.jwt.secret, {
+    expiresIn: config_default.jwt.expiresIn
+  });
+  const { password, ...safeUser } = user;
+  return {
+    token,
+    user: safeUser
+  };
+};
+var AuthService = {
+  createUser,
+  loginUser
+};
+
+// src/modules/auth/auth.controller.ts
+var createUser2 = async (req, res, next) => {
+  try {
+    const result = await AuthService.createUser(req.body);
+    sendResponse_default(res, {
+      statusCode: 201,
+      success: true,
+      message: "User created",
+      data: result
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+var loginUser2 = async (req, res, next) => {
+  try {
+    const result = await AuthService.loginUser(req.body);
+    res.cookie("token", result.token, {
+      secure: false,
+      httpOnly: true,
+      sameSite: "strict"
+    });
+    sendResponse_default(res, {
+      statusCode: 201,
+      success: true,
+      message: "User logged in successfully",
+      data: result
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+var AuthController = {
+  createUser: createUser2,
+  loginUser: loginUser2
+};
+
+// src/modules/auth/auth.validation.ts
+import { z as z2 } from "zod";
+var registerValidation = z2.object({
+  body: z2.object({
+    name: z2.string().min(2),
+    email: z2.email(),
+    password: z2.string().min(6),
+    role: z2.enum(["STUDENT", "TUTOR", "ADMIN"]).optional()
+  })
+});
+var loginValidation = z2.object({
+  body: z2.object({
+    email: z2.email(),
+    password: z2.string().min(6)
+  })
+});
+
+// src/modules/auth/auth.routes.ts
+console.log("Auth route loaded");
+var router2 = express2.Router();
+router2.post(
+  "/register",
+  validateRequest(registerValidation),
+  AuthController.createUser
+);
+router2.post(
+  "/login",
+  validateRequest(loginValidation),
+  AuthController.loginUser
+);
+var AuthRoutes = router2;
+
+// src/modules/booking/booking.routes.ts
+import express3 from "express";
+
+// src/modules/booking/booking.service.ts
+var createBooking = async (studentId, payload) => {
+  const course = await prisma.course.findUnique({
+    where: { id: payload.courseId }
+  });
+  if (!course) throw new Error("Course not Found");
+  const tutorProfile = await prisma.tutor.findUnique({
+    where: { id: course.tutorId }
+  });
+  if (tutorProfile?.userId === studentId) {
+    throw new Error("You can't book your own course!");
+  }
+  const booking = await prisma.booking.create({
+    data: {
+      studentId,
+      tutorId: course.tutorId,
+      courseId: payload.courseId,
+      date: new Date(payload.schedule),
+      status: "PENDING"
+    }
+  });
+  return booking;
+};
+var getBookingsByStudent = async (studentId) => {
+  return await prisma.booking.findMany({
+    where: { studentId },
+    include: {
+      course: true,
+      tutor: { include: { user: true } }
+    }
+  });
+};
+var getBookingsByTutor = async (userId) => {
+  const tutorProfile = await prisma.tutor.findUnique({
+    where: { userId }
+  });
+  if (!tutorProfile) throw new Error("Tutor profile not found!");
+  return await prisma.booking.findMany({
+    where: { tutorId: tutorProfile.id },
+    include: { course: true, student: true }
+  });
+};
+var updateBookingStatus = async (bookingId, userId, status) => {
+  const tutorProfile = await prisma.tutor.findUnique({ where: { userId } });
+  if (!tutorProfile) throw new Error("Tutor not found");
+  const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
+  if (!booking) throw new Error("Booking not found");
+  if (booking.tutorId !== tutorProfile.id) throw new Error("Unauthorized");
+  return await prisma.booking.update({
+    where: { id: bookingId },
+    data: { status }
+  });
+};
+var BookingService = {
+  createBooking,
+  getBookingsByStudent,
+  getBookingsByTutor,
+  updateBookingStatus
+};
+
+// src/modules/booking/booking.controller.ts
+var createBooking2 = async (req, res, next) => {
+  try {
+    const result = await BookingService.createBooking(req.user.id, req.body);
+    sendResponse_default(res, {
+      statusCode: 201,
+      success: true,
+      message: "Booking created successfully",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var getStudentBookings = async (req, res, next) => {
+  try {
+    const result = await BookingService.getBookingsByStudent(req.user.id);
+    sendResponse_default(res, {
+      statusCode: 200,
+      success: true,
+      message: "Your bookings fetched successfully",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var getTutorBookings = async (req, res, next) => {
+  try {
+    const result = await BookingService.getBookingsByTutor(req.user.id);
+    sendResponse_default(res, {
+      statusCode: 200,
+      success: true,
+      message: "Tutor bookings fetched successfully",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var updateBookingStatus2 = async (req, res, next) => {
+  try {
+    const result = await BookingService.updateBookingStatus(
+      req.params.id,
+      req.user.id,
+      req.body.status
+    );
+    sendResponse_default(res, {
+      statusCode: 200,
+      success: true,
+      message: "Booking status updated successfully",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var BookingController = {
+  createBooking: createBooking2,
+  getStudentBookings,
+  getTutorBookings,
+  updateBookingStatus: updateBookingStatus2
+};
+
+// src/modules/booking/booking.validation.ts
+import { z as z3 } from "zod";
+var createBookingValidation = z3.object({
+  body: z3.object({
+    courseId: z3.string(),
+    schedule: z3.string().datetime("Invalid date-time format")
+  })
+});
+var updateBookingStatusValidation = z3.object({
+  body: z3.object({
+    status: z3.enum([
+      "PENDING",
+      "ACCEPTED",
+      "REJECTED",
+      "COMPLETED",
+      "CANCELLED"
+    ])
+  }),
+  params: z3.object({
+    id: z3.string()
+  })
+});
+
+// src/modules/booking/booking.routes.ts
+var router3 = express3.Router();
+router3.post(
+  "/",
+  auth_middleware_default("STUDENT" /* student */),
+  validateRequest(createBookingValidation),
+  BookingController.createBooking
+);
+router3.get(
+  "/my-bookings",
+  auth_middleware_default("STUDENT" /* student */),
+  BookingController.getStudentBookings
+);
+router3.get(
+  "/tutor-bookings",
+  auth_middleware_default("TUTOR" /* tutor */),
+  BookingController.getTutorBookings
+);
+router3.patch(
+  "/:id/status",
+  auth_middleware_default("TUTOR" /* tutor */),
+  validateRequest(updateBookingStatusValidation),
+  BookingController.updateBookingStatus
+);
+var BookingRoutes = router3;
+
+// src/modules/category/category.routes.ts
+import express4 from "express";
+
+// src/modules/category/category.service.ts
+var createCategory = async (payload) => {
+  const result = await prisma.category.create({
+    data: payload
+  });
+  return result;
+};
+var getAllCategories = async () => {
+  const result = await prisma.category.findMany({
+    include: {
+      courses: true
+    }
+  });
+  return result;
+};
+var updateCategory = async (id, payload) => {
+  const result = await prisma.category.update({
+    where: { id },
+    data: payload
+  });
+  return result;
+};
+var deleteCategory = async (id) => {
+  const result = await prisma.category.delete({
+    where: {
+      id
+    }
+  });
+};
+var CategoryService = {
+  createCategory,
+  getAllCategories,
+  updateCategory,
+  deleteCategory
+};
+
+// src/modules/category/category.controller.ts
+var createCategory2 = async (req, res, next) => {
+  try {
+    const result = await CategoryService.createCategory(req.body);
+    sendResponse_default(res, {
+      statusCode: 201,
+      success: true,
+      message: "Category created",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var getAllCategories2 = async (req, res, next) => {
+  try {
+    const result = await CategoryService.getAllCategories();
+    sendResponse_default(res, {
+      statusCode: 201,
+      success: true,
+      message: "All Category fetched successfully",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var updateCategory2 = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const result = await CategoryService.updateCategory(id, req.body);
+    sendResponse_default(res, {
+      statusCode: 201,
+      success: true,
+      message: "category updated successfully",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var deleteCategory2 = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const result = await CategoryService.deleteCategory(id);
+    sendResponse_default(res, {
+      statusCode: 201,
+      success: true,
+      message: "category deleted successfully",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var categoryController = {
+  createCategory: createCategory2,
+  getAllCategories: getAllCategories2,
+  updateCategory: updateCategory2,
+  deleteCategory: deleteCategory2
+};
+
+// src/modules/category/category.validation.ts
+import { z as z4 } from "zod";
+var createCategoryValidation = z4.object({
+  body: z4.object({
+    name: z4.string().min(2, "Category name must be at least 2 characters")
+  })
+});
+var updateCategoryValidation = z4.object({
+  body: z4.object({
+    name: z4.string().min(2, "Category name must be at least 2 characters")
+  }),
+  params: z4.object({
+    id: z4.string()
+  })
+});
+
+// src/modules/category/category.routes.ts
+var router4 = express4.Router();
+router4.get("/", categoryController.getAllCategories);
+router4.post(
+  "/",
+  auth_middleware_default("ADMIN" /* admin */),
+  validateRequest(createCategoryValidation),
+  categoryController.createCategory
+);
+router4.put(
+  "/:id",
+  validateRequest(updateCategoryValidation),
+  auth_middleware_default("ADMIN" /* admin */),
+  categoryController.updateCategory
+);
+router4.delete("/:id", auth_middleware_default("ADMIN" /* admin */), categoryController.deleteCategory);
+var CategoryRoutes = router4;
+
+// src/modules/course/course.route.ts
+import express5 from "express";
+
+// src/modules/course/course.service.ts
+var createCourse = async (userId, payload) => {
+  const tutorProfile = await prisma.tutor.findUnique({
+    where: { userId }
+  });
+  if (!tutorProfile) {
+    throw new Error("Tutor profile not found for this user!");
+  }
+  return await prisma.course.create({
+    data: {
+      ...payload,
+      tutorId: tutorProfile.id
+    }
+  });
+};
+var getCourseById = async (id) => {
+  const course = await prisma.course.findUnique({
+    where: { id },
+    include: {
+      tutor: { include: { user: true } },
+      category: true
+    }
+  });
+  if (!course) throw new Error("Course not found");
+  return course;
+};
+var getAllCourses = async (filter) => {
+  const where = {};
+  if (filter?.tutorId) where.tutorId = filter.tutorId;
+  if (filter?.categoryId) where.categoryId = filter.categoryId;
+  return await prisma.course.findMany({
+    where,
+    include: {
+      tutor: { include: { user: true } },
+      category: true
+    }
+  });
+};
+var updateCourse = async (id, userId, payload) => {
+  const course = await prisma.course.findUnique({ where: { id } });
+  if (!course) throw new Error("Course not found");
+  const tutorProfile = await prisma.tutor.findUnique({
+    where: { userId }
+  });
+  if (!tutorProfile || course.tutorId !== tutorProfile.id) {
+    throw new Error("You are not authorized to update this course!");
+  }
+  return await prisma.course.update({
+    where: { id },
+    data: payload
+  });
+};
+var deleteCourse3 = async (id, userId) => {
+  try {
+    const tutorProfile = await prisma.tutor.findUnique({
+      where: { userId }
+    });
+    if (!tutorProfile) throw new Error("Tutor profile not found!");
+    const course = await prisma.course.findUnique({ where: { id } });
+    if (!course) throw new Error("Course not found");
+    if (course.tutorId !== tutorProfile.id) {
+      throw new Error("You are not authorized to delete this course!");
+    }
+    await prisma.course.delete({ where: { id } });
+    return true;
+  } catch (error) {
+    throw error;
+  }
+};
+var CourseService = {
+  createCourse,
+  getCourseById,
+  getAllCourses,
+  updateCourse,
+  deleteCourse: deleteCourse3
+};
+
+// src/modules/course/course.controller.ts
+var createCourse2 = async (req, res, next) => {
+  try {
+    const result = await CourseService.createCourse(req.user.id, req.body);
+    sendResponse_default(res, {
+      statusCode: 201,
+      success: true,
+      message: "Course created",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var getCourse = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const result = await CourseService.getCourseById(id);
+    sendResponse_default(res, {
+      statusCode: 201,
+      success: true,
+      message: "Course fetched successfully",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var getAllCourses2 = async (req, res, next) => {
+  try {
+    const result = await CourseService.getAllCourses(req.query);
+    sendResponse_default(res, {
+      statusCode: 201,
+      success: true,
+      message: "All Courses Fetched Successfully",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var updateCourse2 = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const result = await CourseService.updateCourse(id, req.user.id, req.body);
+    sendResponse_default(res, {
+      statusCode: 201,
+      success: true,
+      message: "Course Updated successfully",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var deleteCourse4 = async (req, res, next) => {
+  try {
+    const result = await CourseService.deleteCourse(
+      req.params.id,
+      req.user.id
+    );
+    sendResponse_default(res, {
+      statusCode: 201,
+      success: true,
+      message: "Course Deleted Successfully",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var CourseController = {
+  createCourse: createCourse2,
+  getCourse,
+  getAllCourses: getAllCourses2,
+  updateCourse: updateCourse2,
+  deleteCourse: deleteCourse4
+};
+
+// src/modules/course/course.validation.ts
+import { z as z5 } from "zod";
+var createCourseValidation = z5.object({
+  body: z5.object({
+    title: z5.string().min(3, "Title must be at least 3 characters"),
+    description: z5.string().min(10, "Description must be at least 10 characters"),
+    categoryId: z5.string(),
+    price: z5.number().positive("Price must be positive")
+  })
+});
+var updateCourseValidation = z5.object({
+  body: z5.object({
+    title: z5.string().min(3).optional(),
+    description: z5.string().min(10).optional(),
+    categoryId: z5.string().optional(),
+    price: z5.number().positive().optional()
+  }),
+  params: z5.object({
+    id: z5.string()
+  })
+});
+
+// src/modules/course/course.route.ts
+var router5 = express5.Router();
+router5.get("/", CourseController.getAllCourses);
+router5.get("/:id", CourseController.getCourse);
+router5.post(
+  "/",
+  auth_middleware_default("TUTOR" /* tutor */),
+  validateRequest(createCourseValidation),
+  CourseController.createCourse
+);
+router5.put(
+  "/:id",
+  auth_middleware_default("TUTOR" /* tutor */),
+  validateRequest(updateCourseValidation),
+  CourseController.updateCourse
+);
+router5.delete("/:id", auth_middleware_default("TUTOR" /* tutor */), CourseController.deleteCourse);
+var CourseRoutes = router5;
+
+// src/modules/review/review.routes.ts
+import express6 from "express";
+
+// src/modules/review/review.service.ts
+var createReview = async (studentId, payload) => {
+  const { bookingId, rating, comment } = payload;
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId }
+  });
+  if (!booking) throw new Error("Booking not found");
+  if (booking.studentId !== studentId) throw new Error("Unauthorized");
+  if (booking.status !== BookingStatus.COMPLETED)
+    throw new Error("You can only review a completed booking");
+  const existingReview = await prisma.review.findUnique({
+    where: { bookingId }
+  });
+  if (existingReview) throw new Error("You already reviewed this booking");
+  const review = await prisma.review.create({
+    data: {
+      rating: Number(rating),
+      // নিশ্চিত করো এটি যেন Float/Int হয়
+      comment,
+      studentId,
+      tutorId: booking.tutorId,
+      courseId: booking.courseId,
+      bookingId
+    }
+  });
+  return review;
+};
+var getReviewsForCourse = async (courseId) => {
+  return await prisma.review.findMany({
+    where: { courseId },
+    include: {
+      Student: {
+        select: { name: true, avatar: true }
+        // শুধু দরকারি তথ্য নাও
+      }
+    },
+    orderBy: { createdAt: "desc" }
+    // নতুন রিভিউ আগে দেখাবে
+  });
+};
+var getReviewsForTutor = async (tutorId) => {
+  return await prisma.review.findMany({
+    where: { tutorId },
+    include: {
+      student: { select: { name: true, avatar: true } },
+      course: { select: { title: true } }
+    },
+    orderBy: { createdAt: "desc" }
+  });
+};
+var ReviewService = {
+  createReview,
+  getReviewsForCourse,
+  getReviewsForTutor
+};
+
+// src/modules/review/review.controller.ts
+var createReview2 = async (req, res, next) => {
+  try {
+    const result = await ReviewService.createReview(req.user.id, req.body);
+    sendResponse_default(res, {
+      statusCode: 201,
+      success: true,
+      message: "Review submitted successfully",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var getReviewsForCourse2 = async (req, res, next) => {
+  try {
+    const result = await ReviewService.getReviewsForCourse(
+      req.params.courseId
+    );
+    sendResponse_default(res, {
+      statusCode: 200,
+      success: true,
+      message: "Course reviews loaded successfully",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var getReviewsForTutor2 = async (req, res, next) => {
+  try {
+    const result = await ReviewService.getReviewsForTutor(
+      req.params.tutorId
+    );
+    sendResponse_default(res, {
+      statusCode: 200,
+      success: true,
+      message: "Tutor reviews loaded successfully",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var ReviewController = {
+  createReview: createReview2,
+  getReviewsForCourse: getReviewsForCourse2,
+  getReviewsForTutor: getReviewsForTutor2
+};
+
+// src/modules/review/review.validation.ts
+import { z as z6 } from "zod";
+var createReviewValidation = z6.object({
+  body: z6.object({
+    bookingId: z6.string(),
+    rating: z6.number().min(1).max(5),
+    comment: z6.string().optional()
+  })
+});
+
+// src/modules/review/review.routes.ts
+var router6 = express6.Router();
+router6.post(
+  "/",
+  auth_middleware_default("STUDENT" /* student */),
+  validateRequest(createReviewValidation),
+  ReviewController.createReview
+);
+router6.get("/course/:courseId", ReviewController.getReviewsForCourse);
+router6.get("/tutor/:tutorId", ReviewController.getReviewsForTutor);
+var ReviewRoutes = router6;
+
+// src/modules/tutor/tutor.routes.ts
+import express7 from "express";
+
+// src/modules/tutor/tutor.service.ts
+var createOrUpdateProfile = async (userId, payload) => {
+  if (!userId) {
+    throw new Error("User ID NOT EXISTS!");
+  }
+  const tutorData = {
+    bio: payload.bio,
+    expertise: payload.expertise,
+    hourlyRate: payload.hourlyRate,
+    experience: payload.experience
+  };
+  const existingProfile = await prisma.tutor.findUnique({
+    where: { userId }
+  });
+  if (existingProfile) {
+    const updated = await prisma.tutor.update({
+      where: { userId },
+      data: tutorData
+    });
+    return updated;
+  }
+  const created = await prisma.tutor.create({
+    data: {
+      userId,
+      ...tutorData
+    }
+  });
+  return created;
+};
+var getProfileByUserId = async (userId) => {
+  const profile = await prisma.tutor.findUnique({
+    where: { userId },
+    include: {
+      user: true,
+      courses: true,
+      booking: true,
+      reviews: true
+    }
+  });
+  if (!profile) {
+    throw new Error("Tutor profile not fond");
+  }
+  return profile;
+};
+var getAllTutors = async () => {
+  return await prisma.tutor.findMany({
+    include: {
+      user: true,
+      courses: true,
+      reviews: true
+    }
+  });
+};
+var TutorService = {
+  createOrUpdateProfile,
+  getProfileByUserId,
+  getAllTutors
+};
+
+// src/modules/tutor/tutor.controller.ts
+var createOrUpdateProfile2 = async (req, res, next) => {
+  try {
+    const result = await TutorService.createOrUpdateProfile(
+      req.user.id,
+      req.body
+    );
+    sendResponse_default(res, {
+      statusCode: 201,
+      success: true,
+      message: "tutor created",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var getProfileByUserId2 = async (req, res, next) => {
+  try {
+    const result = await TutorService.getProfileByUserId(req.user.id);
+    sendResponse_default(res, {
+      statusCode: 201,
+      success: true,
+      message: "tutor profile fetched successfully",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var getAllTutors2 = async (req, res, next) => {
+  try {
+    const result = await TutorService.getAllTutors();
+    sendResponse_default(res, {
+      statusCode: 201,
+      success: true,
+      message: "All tutors fetched successfully",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var TutorController = {
+  createOrUpdateProfile: createOrUpdateProfile2,
+  getProfileByUserId: getProfileByUserId2,
+  getAllTutors: getAllTutors2
+};
+
+// src/modules/tutor/tutor.validation.ts
+import z7 from "zod";
+var createUpdateTutorValidation = z7.object({
+  body: z7.object({
+    bio: z7.string().min(10, "Bio must be at least 10 characters"),
+    expertise: z7.string().min(3, "Expertise is required"),
+    hourlyRate: z7.number().positive("Hourly rate must be positive"),
+    experience: z7.number().int().min(0, "Experience must be 0 or more")
+  })
+});
+
+// src/modules/tutor/tutor.routes.ts
+var router7 = express7.Router();
+router7.post(
+  "/profile",
+  auth_middleware_default("TUTOR" /* tutor */),
+  validateRequest(createUpdateTutorValidation),
+  TutorController.createOrUpdateProfile
+);
+router7.get(
+  "/profile/:id",
+  auth_middleware_default("TUTOR" /* tutor */),
+  TutorController.getProfileByUserId
+);
+router7.get("/", TutorController.getAllTutors);
+var TutorRoutes = router7;
+
+// src/routes/index.ts
+var router8 = Router();
+var routerManager = [
+  {
+    path: "/auth",
+    route: AuthRoutes
+  },
+  {
+    path: "/tutors",
+    route: TutorRoutes
+  },
+  {
+    path: "/categories",
+    route: CategoryRoutes
+  },
+  {
+    path: "/courses",
+    route: CourseRoutes
+  },
+  {
+    path: "/bookings",
+    route: BookingRoutes
+  },
+  {
+    path: "/reviews",
+    route: ReviewRoutes
+  },
+  {
+    path: "/admin",
+    route: AdminRoutes
+  }
+];
+routerManager.forEach((r) => router8.use(r.path, r.route));
+var routes_default = router8;
+
+// src/app.ts
+var app = express8();
+app.use(express8.json());
+app.use(cors());
+app.use("/api/v1", routes_default);
+app.get("/", (req, res) => {
+  res.send("Hello from Apollo Gears World!");
+});
+app.use(notFound);
+app.use(errorHandler);
+var app_default = app;
+
+// src/index.ts
+var index_default = app_default;
+export {
+  index_default as default
+};
