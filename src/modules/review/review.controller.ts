@@ -21,6 +21,25 @@ const createReview = async (
   }
 };
 
+// ১. সব রিভিউ দেখার রুট (পাবলিক)
+
+const getAllReviews = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const result = await ReviewService.getAllReviews();
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Reviews fetched successfully",
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 const getReviewsForCourse = async (
   req: Request,
   res: Response,
@@ -63,6 +82,7 @@ const getReviewsForTutor = async (
 
 export const ReviewController = {
   createReview,
+  getAllReviews,
   getReviewsForCourse,
   getReviewsForTutor,
 };

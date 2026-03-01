@@ -1,4 +1,5 @@
 import express from "express";
+import auth, { UserRole } from "../../middlewares/auth.middleware";
 import { validateRequest } from "../../middlewares/validate";
 import { AuthController } from "./auth.controller";
 import { loginValidation, registerValidation } from "./auth.validation";
@@ -16,3 +17,9 @@ router.post(
   AuthController.loginUser,
 );
 export const AuthRoutes = router;
+
+router.get(
+  "/get-me",
+  auth(UserRole.admin, UserRole.student, UserRole.tutor),
+  AuthController.getMe,
+);

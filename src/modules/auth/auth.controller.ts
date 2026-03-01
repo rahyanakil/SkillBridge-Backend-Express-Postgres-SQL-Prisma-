@@ -34,7 +34,24 @@ const loginUser = async (req: Request, res: Response, next: NextFunction) => {
     next(error);
   }
 };
+
+const getMe = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.user; // auth middleware থেকে পাওয়া id
+    const result = await AuthService.getMe(id);
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "User profile retrieved successfully",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 export const AuthController = {
   createUser,
   loginUser,
+  getMe,
 };

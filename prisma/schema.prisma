@@ -107,12 +107,6 @@ model Review{
   course Course @relation(fields: [courseId],references: [id],onDelete: Cascade)
   bookingId String @unique
   booking Booking @relation(fields: [bookingId],references: [id],onDelete: Cascade)
-
-
-
-
-
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

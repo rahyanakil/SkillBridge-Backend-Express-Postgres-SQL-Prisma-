@@ -36,7 +36,7 @@ const getProfileByUserId = async (userId: string) => {
     include: {
       user: true,
       courses: true,
-      booking: true,
+      bookings: true,
       reviews: true,
     },
   });

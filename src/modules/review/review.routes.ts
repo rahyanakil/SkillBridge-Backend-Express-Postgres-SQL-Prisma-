@@ -14,6 +14,7 @@ router.post(
   validateRequest(createReviewValidation),
   ReviewController.createReview,
 );
+router.get("/", ReviewController.getAllReviews);
 
 // ২. একটি নির্দিষ্ট কোর্সের সব রিভিউ দেখা (পাবলিক - যে কেউ দেখতে পারবে)
 router.get("/course/:courseId", ReviewController.getReviewsForCourse);

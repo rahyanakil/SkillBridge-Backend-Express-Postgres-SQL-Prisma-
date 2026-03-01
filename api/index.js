@@ -22,7 +22,7 @@ var config = {
   "clientVersion": "7.4.1",
   "engineVersion": "55ae170b1ced7fc6ed07a15f110549408c501bb3",
   "activeProvider": "postgresql",
-  "inlineSchema": 'generator client {\n  provider = "prisma-client"\n  output   = "../generated/prisma"\n}\n\ndatasource db {\n  provider = "postgresql"\n}\n\nmodel User {\n  id        String   @id @default(uuid())\n  name      String\n  email     String   @unique\n  password  String\n  role      Role     @default(STUDENT)\n  avatar    String?\n  isBanned  Boolean  @default(false)\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  tutorProfile Tutor?\n  bookings     Booking[] @relation("StudentBookings")\n  review       Review[]  @relation("StudentReviews")\n}\n\n// TUTOR Model \nmodel Tutor {\n  id     String @id @default(uuid())\n  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)\n  userId String @unique\n\n  bio        String\n  expertise  String\n  hourlyRate Float\n  experience Int\n\n  courses Course[]\n\n  createdAt DateTime  @default(now())\n  updatedAt DateTime  @updatedAt\n  bookings  Booking[] @relation("TutorBookings")\n  reviews   Review[]\n}\n\nmodel Category {\n  id        String   @id @default(uuid())\n  name      String   @unique\n  courses   Course[]\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\nmodel Course {\n  id          String @id @default(uuid())\n  tutorId     String\n  categoryId  String\n  title       String\n  description String\n  price       Float\n\n  tutor    Tutor     @relation(fields: [tutorId], references: [id], onDelete: Cascade)\n  category Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)\n  bookings Booking[]\n  reviews  Review[]\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\nmodel Booking {\n  id        String        @id @default(uuid())\n  studentId String\n  tutorId   String\n  courseId  String\n  date      DateTime\n  status    BookingStatus @default(PENDING)\n\n  student   User     @relation("StudentBookings", fields: [studentId], references: [id])\n  tutor     Tutor    @relation("TutorBookings", fields: [tutorId], references: [id])\n  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)\n  review    Review?\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\nmodel Review {\n  id        String  @id @default(uuid())\n  rating    Int\n  comment   String?\n  studentId String\n  Student   User    @relation("StudentReviews", fields: [studentId], references: [id], onDelete: Cascade)\n  tutorId   String\n  tutor     Tutor   @relation(fields: [tutorId], references: [id], onDelete: Cascade)\n  courseId  String\n  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)\n  bookingId String  @unique\n  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\n// enums \nenum Role {\n  STUDENT\n  TUTOR\n  ADMIN\n}\n\nenum BookingStatus {\n  PENDING\n  ACCEPTED\n  REJECTED\n  COMPLETED\n  CANCELLED\n}\n',
+  "inlineSchema": 'generator client {\n  provider = "prisma-client"\n  output   = "../generated/prisma"\n}\n\ndatasource db {\n  provider = "postgresql"\n}\n\nmodel User {\n  id        String   @id @default(uuid())\n  name      String\n  email     String   @unique\n  password  String\n  role      Role     @default(STUDENT)\n  avatar    String?\n  isBanned  Boolean  @default(false)\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  tutorProfile Tutor?\n  bookings     Booking[] @relation("StudentBookings")\n  review       Review[]  @relation("StudentReviews")\n}\n\n// TUTOR Model \nmodel Tutor {\n  id     String @id @default(uuid())\n  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)\n  userId String @unique\n\n  bio        String\n  expertise  String\n  hourlyRate Float\n  experience Int\n\n  courses Course[]\n\n  createdAt DateTime  @default(now())\n  updatedAt DateTime  @updatedAt\n  bookings  Booking[] @relation("TutorBookings")\n  reviews   Review[]\n}\n\nmodel Category {\n  id        String   @id @default(uuid())\n  name      String   @unique\n  courses   Course[]\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\nmodel Course {\n  id          String @id @default(uuid())\n  tutorId     String\n  categoryId  String\n  title       String\n  description String\n  price       Float\n\n  tutor    Tutor     @relation(fields: [tutorId], references: [id], onDelete: Cascade)\n  category Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)\n  bookings Booking[]\n  reviews  Review[]\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\nmodel Booking {\n  id        String        @id @default(uuid())\n  studentId String\n  tutorId   String\n  courseId  String\n  date      DateTime\n  status    BookingStatus @default(PENDING)\n\n  student   User     @relation("StudentBookings", fields: [studentId], references: [id])\n  tutor     Tutor    @relation("TutorBookings", fields: [tutorId], references: [id])\n  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)\n  review    Review?\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\nmodel Review {\n  id        String   @id @default(uuid())\n  rating    Int\n  comment   String?\n  studentId String\n  Student   User     @relation("StudentReviews", fields: [studentId], references: [id], onDelete: Cascade)\n  tutorId   String\n  tutor     Tutor    @relation(fields: [tutorId], references: [id], onDelete: Cascade)\n  courseId  String\n  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)\n  bookingId String   @unique\n  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\n// enums \nenum Role {\n  STUDENT\n  TUTOR\n  ADMIN\n}\n\nenum BookingStatus {\n  PENDING\n  ACCEPTED\n  REJECTED\n  COMPLETED\n  CANCELLED\n}\n',
   "runtimeDataModel": {
     "models": {},
     "enums": {},
@@ -549,9 +549,22 @@ var loginUser = async (payload) => {
     user: safeUser
   };
 };
+var getMe = async (userId) => {
+  const result = await prisma.user.findUnique({
+    where: {
+      id: userId
+    }
+  });
+  if (!result) {
+    throw new Error("User not found!");
+  }
+  const { password, ...safeUser } = result;
+  return safeUser;
+};
 var AuthService = {
   createUser,
-  loginUser
+  loginUser,
+  getMe
 };
 
 // src/modules/auth/auth.controller.ts
@@ -586,9 +599,24 @@ var loginUser2 = async (req, res, next) => {
     next(error);
   }
 };
+var getMe2 = async (req, res, next) => {
+  try {
+    const { id } = req.user;
+    const result = await AuthService.getMe(id);
+    sendResponse_default(res, {
+      statusCode: 200,
+      success: true,
+      message: "User profile retrieved successfully",
+      data: result
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 var AuthController = {
   createUser: createUser2,
-  loginUser: loginUser2
+  loginUser: loginUser2,
+  getMe: getMe2
 };
 
 // src/modules/auth/auth.validation.ts
@@ -622,6 +650,11 @@ router2.post(
   AuthController.loginUser
 );
 var AuthRoutes = router2;
+router2.get(
+  "/get-me",
+  auth_middleware_default("ADMIN" /* admin */, "STUDENT" /* student */, "TUTOR" /* tutor */),
+  AuthController.getMe
+);
 
 // src/modules/booking/booking.routes.ts
 import express3 from "express";
@@ -1164,6 +1197,17 @@ var createReview = async (studentId, payload) => {
   });
   return review;
 };
+var getAllReviews = async () => {
+  return await prisma.review.findMany({
+    include: {
+      Student: { select: { name: true, avatar: true } },
+      course: { select: { title: true } }
+    },
+    take: 6,
+    // হোম পেজের জন্য মাত্র ৬টি রিভিউ নিন
+    orderBy: { createdAt: "desc" }
+  });
+};
 var getReviewsForCourse = async (courseId) => {
   return await prisma.review.findMany({
     where: { courseId },
@@ -1189,6 +1233,7 @@ var getReviewsForTutor = async (tutorId) => {
 };
 var ReviewService = {
   createReview,
+  getAllReviews,
   getReviewsForCourse,
   getReviewsForTutor
 };
@@ -1201,6 +1246,19 @@ var createReview2 = async (req, res, next) => {
       statusCode: 201,
       success: true,
       message: "Review submitted successfully",
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var getAllReviews2 = async (req, res, next) => {
+  try {
+    const result = await ReviewService.getAllReviews();
+    sendResponse_default(res, {
+      statusCode: 200,
+      success: true,
+      message: "Reviews fetched successfully",
       data: result
     });
   } catch (err) {
@@ -1239,6 +1297,7 @@ var getReviewsForTutor2 = async (req, res, next) => {
 };
 var ReviewController = {
   createReview: createReview2,
+  getAllReviews: getAllReviews2,
   getReviewsForCourse: getReviewsForCourse2,
   getReviewsForTutor: getReviewsForTutor2
 };
@@ -1261,6 +1320,7 @@ router6.post(
   validateRequest(createReviewValidation),
   ReviewController.createReview
 );
+router6.get("/", ReviewController.getAllReviews);
 router6.get("/course/:courseId", ReviewController.getReviewsForCourse);
 router6.get("/tutor/:tutorId", ReviewController.getReviewsForTutor);
 var ReviewRoutes = router6;

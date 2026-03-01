@@ -12,11 +12,7 @@ router.post(
   validateRequest(createUpdateTutorValidation),
   TutorController.createOrUpdateProfile,
 );
-router.get(
-  "/profile/:id",
-  auth(UserRole.tutor),
-  TutorController.getProfileByUserId,
-);
+router.get("/profile/:id", TutorController.getProfileByUserId);
 //get all tutor public route
 router.get("/", TutorController.getAllTutors);
 

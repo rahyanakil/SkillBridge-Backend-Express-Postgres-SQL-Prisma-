@@ -41,6 +41,16 @@ const createReview = async (studentId: string, payload: any) => {
   return review;
 };
 
+const getAllReviews = async () => {
+  return await prisma.review.findMany({
+    include: {
+      Student: { select: { name: true, avatar: true } },
+      course: { select: { title: true } },
+    },
+    take: 6, // হোম পেজের জন্য মাত্র ৬টি রিভিউ নিন
+    orderBy: { createdAt: "desc" },
+  });
+};
 const getReviewsForCourse = async (courseId: string) => {
   return await prisma.review.findMany({
     where: { courseId },
@@ -66,6 +76,7 @@ const getReviewsForTutor = async (tutorId: string) => {
 
 export const ReviewService = {
   createReview,
+  getAllReviews,
   getReviewsForCourse,
   getReviewsForTutor,
 };

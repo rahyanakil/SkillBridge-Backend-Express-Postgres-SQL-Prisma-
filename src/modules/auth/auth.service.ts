@@ -50,7 +50,23 @@ const loginUser = async (payload: any) => {
     user: safeUser,
   };
 };
+
+const getMe = async (userId: string) => {
+  const result = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+  });
+
+  if (!result) {
+    throw new Error("User not found!");
+  }
+
+  const { password, ...safeUser } = result;
+  return safeUser;
+};
 export const AuthService = {
   createUser,
   loginUser,
+  getMe,
 };
