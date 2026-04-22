@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import path from "path";
+import { uploadToCloudinary } from "../../lib/cloudinary";
 import sendResponse from "../../utils/sendResponse";
 import { AuthService } from "./auth.service";
 
@@ -46,7 +46,7 @@ const changePassword = async (req: Request, res: Response, next: NextFunction) =
 const uploadAvatar = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.file) throw new Error("No file uploaded");
-    const avatarUrl = `/uploads/${req.file.filename}`;
+    const avatarUrl = await uploadToCloudinary(req.file.buffer);
     const result = await AuthService.updateAvatar(req.user.id, avatarUrl);
     sendResponse(res, { statusCode: 200, success: true, message: "Avatar updated successfully", data: result });
   } catch (err: any) { next(err); }
