@@ -30,6 +30,7 @@ const deleteCategory = async (id: string) => {
       id,
     },
   });
+  return result;
 };
 
 export const CategoryService = {

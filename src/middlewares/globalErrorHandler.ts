@@ -12,7 +12,15 @@ export function errorHandler(
   let message = err.message || "Internal server Error!";
   let errorDetails = err;
 
-  if (err instanceof ZodError) {
+  if (err.name === "TokenExpiredError") {
+    statusCode = 401;
+    message = "Token has expired. Please login again.";
+    errorDetails = {};
+  } else if (err.name === "JsonWebTokenError") {
+    statusCode = 401;
+    message = "Invalid token. Please login again.";
+    errorDetails = {};
+  } else if (err instanceof ZodError) {
     statusCode = 400;
     message = "Validation Failed";
     errorDetails = err.issues;

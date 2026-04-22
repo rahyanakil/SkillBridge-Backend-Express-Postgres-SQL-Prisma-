@@ -1363,7 +1363,7 @@ var getProfileByUserId = async (userId) => {
     include: {
       user: true,
       courses: true,
-      booking: true,
+      bookings: true,
       reviews: true
     }
   });
@@ -1455,11 +1455,7 @@ router7.post(
   validateRequest(createUpdateTutorValidation),
   TutorController.createOrUpdateProfile
 );
-router7.get(
-  "/profile/:id",
-  auth_middleware_default("TUTOR" /* tutor */),
-  TutorController.getProfileByUserId
-);
+router7.get("/profile/:id", TutorController.getProfileByUserId);
 router7.get("/", TutorController.getAllTutors);
 var TutorRoutes = router7;
 

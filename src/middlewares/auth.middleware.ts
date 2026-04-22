@@ -13,19 +13,25 @@ export enum UserRole {
 const auth = (...roles: UserRole[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const token = req.headers.authorization;
-      if (!token) {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
         throw new Error("Token not found!!");
       }
+      const token = authHeader.startsWith("Bearer ")
+        ? authHeader.slice(7)
+        : authHeader;
       const decoded = jwt.verify(token, secret) as JwtPayload;
 
       const userData = await prisma.user.findUnique({
         where: {
-          email: decoded.email,
+          id: decoded.id,
         },
       });
       if (!userData) {
         throw new Error("Unauthorized!");
+      }
+      if (userData.isBanned) {
+        throw new Error("Your account has been suspended. Contact support.");
       }
       if (roles.length && !roles.includes(decoded.role)) {
         throw new Error("Unauthorized");

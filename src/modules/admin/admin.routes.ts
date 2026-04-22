@@ -16,12 +16,20 @@ router.patch(
   AdminController.updateUserStatus,
 );
 
-router.get("/bookings", auth(UserRole.admin), AdminController.getAllBookings);
-
 router.delete(
-  "/courses/:courseId",
+  "/users/:userId",
   auth(UserRole.admin),
-  AdminController.deleteCourse,
+  AdminController.deleteUser,
 );
+
+router.get("/bookings", auth(UserRole.admin), AdminController.getAllBookings);
+router.patch("/bookings/:bookingId/status", auth(UserRole.admin), AdminController.updateBookingStatus);
+
+router.delete("/courses/:courseId", auth(UserRole.admin), AdminController.deleteCourse);
+
+router.post("/categories", auth(UserRole.admin), AdminController.createCategory);
+router.delete("/categories/:categoryId", auth(UserRole.admin), AdminController.deleteCategory);
+
+router.get("/stats", auth(UserRole.admin), AdminController.getStats);
 
 export const AdminRoutes = router;
