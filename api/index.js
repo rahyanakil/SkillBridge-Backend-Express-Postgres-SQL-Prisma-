@@ -550,6 +550,22 @@ import express2 from "express";
 import multer from "multer";
 import path2 from "path";
 
+// src/lib/cloudinary.ts
+import { v2 as cloudinary } from "cloudinary";
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+var uploadToCloudinary = (buffer, folder = "skillbridge/avatars") => {
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader.upload_stream({ folder, resource_type: "image" }, (error, result) => {
+      if (error || !result) return reject(error ?? new Error("Cloudinary upload failed"));
+      resolve(result.secure_url);
+    }).end(buffer);
+  });
+};
+
 // src/modules/auth/auth.service.ts
 import bcrypt from "bcryptjs";
 import jwt2 from "jsonwebtoken";
@@ -681,7 +697,7 @@ var changePassword2 = async (req, res, next) => {
 var uploadAvatar = async (req, res, next) => {
   try {
     if (!req.file) throw new Error("No file uploaded");
-    const avatarUrl = `/uploads/${req.file.filename}`;
+    const avatarUrl = await uploadToCloudinary(req.file.buffer);
     const result = await AuthService.updateAvatar(req.user.id, avatarUrl);
     sendResponse_default(res, { statusCode: 200, success: true, message: "Avatar updated successfully", data: result });
   } catch (err) {
@@ -716,15 +732,8 @@ var loginValidation = z2.object({
 
 // src/modules/auth/auth.routes.ts
 var router2 = express2.Router();
-var storage = multer.diskStorage({
-  destination: "uploads/",
-  filename: (_req, file, cb) => {
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `${unique}${path2.extname(file.originalname)}`);
-  }
-});
 var upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const allowed = /jpeg|jpg|png|webp/;
