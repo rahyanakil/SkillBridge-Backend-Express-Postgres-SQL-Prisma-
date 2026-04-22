@@ -6,7 +6,8 @@ var __export = (target, all) => {
 
 // src/app.ts
 import cors from "cors";
-import express8 from "express";
+import express10 from "express";
+import path3 from "path";
 
 // src/middlewares/globalErrorHandler.ts
 import { ZodError } from "zod";
@@ -22,7 +23,7 @@ var config = {
   "clientVersion": "7.4.1",
   "engineVersion": "55ae170b1ced7fc6ed07a15f110549408c501bb3",
   "activeProvider": "postgresql",
-  "inlineSchema": 'generator client {\n  provider = "prisma-client"\n  output   = "../generated/prisma"\n}\n\ndatasource db {\n  provider = "postgresql"\n}\n\nmodel User {\n  id        String   @id @default(uuid())\n  name      String\n  email     String   @unique\n  password  String\n  role      Role     @default(STUDENT)\n  avatar    String?\n  isBanned  Boolean  @default(false)\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  tutorProfile Tutor?\n  bookings     Booking[] @relation("StudentBookings")\n  review       Review[]  @relation("StudentReviews")\n}\n\n// TUTOR Model \nmodel Tutor {\n  id     String @id @default(uuid())\n  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)\n  userId String @unique\n\n  bio        String\n  expertise  String\n  hourlyRate Float\n  experience Int\n\n  courses Course[]\n\n  createdAt DateTime  @default(now())\n  updatedAt DateTime  @updatedAt\n  bookings  Booking[] @relation("TutorBookings")\n  reviews   Review[]\n}\n\nmodel Category {\n  id        String   @id @default(uuid())\n  name      String   @unique\n  courses   Course[]\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\nmodel Course {\n  id          String @id @default(uuid())\n  tutorId     String\n  categoryId  String\n  title       String\n  description String\n  price       Float\n\n  tutor    Tutor     @relation(fields: [tutorId], references: [id], onDelete: Cascade)\n  category Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)\n  bookings Booking[]\n  reviews  Review[]\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\nmodel Booking {\n  id        String        @id @default(uuid())\n  studentId String\n  tutorId   String\n  courseId  String\n  date      DateTime\n  status    BookingStatus @default(PENDING)\n\n  student   User     @relation("StudentBookings", fields: [studentId], references: [id])\n  tutor     Tutor    @relation("TutorBookings", fields: [tutorId], references: [id])\n  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)\n  review    Review?\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\nmodel Review {\n  id        String   @id @default(uuid())\n  rating    Int\n  comment   String?\n  studentId String\n  Student   User     @relation("StudentReviews", fields: [studentId], references: [id], onDelete: Cascade)\n  tutorId   String\n  tutor     Tutor    @relation(fields: [tutorId], references: [id], onDelete: Cascade)\n  courseId  String\n  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)\n  bookingId String   @unique\n  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\n// enums \nenum Role {\n  STUDENT\n  TUTOR\n  ADMIN\n}\n\nenum BookingStatus {\n  PENDING\n  ACCEPTED\n  REJECTED\n  COMPLETED\n  CANCELLED\n}\n',
+  "inlineSchema": 'generator client {\n  provider = "prisma-client"\n  output   = "../generated/prisma"\n}\n\ndatasource db {\n  provider = "postgresql"\n}\n\nmodel User {\n  id        String   @id @default(uuid())\n  name      String\n  email     String   @unique\n  password  String\n  role      Role     @default(STUDENT)\n  avatar    String?\n  isBanned  Boolean  @default(false)\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  tutorProfile  Tutor?\n  bookings      Booking[]      @relation("StudentBookings")\n  review        Review[]       @relation("StudentReviews")\n  notifications Notification[]\n}\n\nmodel Tutor {\n  id         String    @id @default(uuid())\n  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)\n  userId     String    @unique\n  bio        String\n  expertise  String\n  hourlyRate Float\n  experience Int\n  courses    Course[]\n  createdAt  DateTime  @default(now())\n  updatedAt  DateTime  @updatedAt\n  bookings   Booking[] @relation("TutorBookings")\n  reviews    Review[]\n}\n\nmodel Category {\n  id        String   @id @default(uuid())\n  name      String   @unique\n  courses   Course[]\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\nmodel Course {\n  id          String    @id @default(uuid())\n  tutorId     String\n  categoryId  String\n  title       String\n  description String\n  price       Float\n  tutor       Tutor     @relation(fields: [tutorId], references: [id], onDelete: Cascade)\n  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)\n  bookings    Booking[]\n  reviews     Review[]\n  createdAt   DateTime  @default(now())\n  updatedAt   DateTime  @updatedAt\n}\n\nmodel Booking {\n  id            String        @id @default(uuid())\n  studentId     String\n  tutorId       String\n  courseId      String\n  date          DateTime\n  status        BookingStatus @default(PENDING)\n  paymentStatus PaymentStatus @default(UNPAID)\n  classroomLink String?\n  student       User          @relation("StudentBookings", fields: [studentId], references: [id])\n  tutor         Tutor         @relation("TutorBookings", fields: [tutorId], references: [id])\n  course        Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)\n  review        Review?\n  createdAt     DateTime      @default(now())\n  updatedAt     DateTime      @updatedAt\n}\n\nmodel Review {\n  id        String   @id @default(uuid())\n  rating    Int\n  comment   String?\n  studentId String\n  Student   User     @relation("StudentReviews", fields: [studentId], references: [id], onDelete: Cascade)\n  tutorId   String\n  tutor     Tutor    @relation(fields: [tutorId], references: [id], onDelete: Cascade)\n  courseId  String\n  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)\n  bookingId String   @unique\n  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\nmodel Notification {\n  id        String   @id @default(uuid())\n  userId    String\n  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n  type      String\n  title     String\n  message   String\n  isRead    Boolean  @default(false)\n  createdAt DateTime @default(now())\n}\n\nenum Role {\n  STUDENT\n  TUTOR\n  ADMIN\n}\n\nenum BookingStatus {\n  PENDING\n  ACCEPTED\n  REJECTED\n  COMPLETED\n  CANCELLED\n}\n\nenum PaymentStatus {\n  UNPAID\n  PAID\n  REFUNDED\n}\n',
   "runtimeDataModel": {
     "models": {},
     "enums": {},
@@ -33,10 +34,10 @@ var config = {
     "graph": ""
   }
 };
-config.runtimeDataModel = JSON.parse('{"models":{"User":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"name","kind":"scalar","type":"String"},{"name":"email","kind":"scalar","type":"String"},{"name":"password","kind":"scalar","type":"String"},{"name":"role","kind":"enum","type":"Role"},{"name":"avatar","kind":"scalar","type":"String"},{"name":"isBanned","kind":"scalar","type":"Boolean"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"},{"name":"tutorProfile","kind":"object","type":"Tutor","relationName":"TutorToUser"},{"name":"bookings","kind":"object","type":"Booking","relationName":"StudentBookings"},{"name":"review","kind":"object","type":"Review","relationName":"StudentReviews"}],"dbName":null},"Tutor":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"user","kind":"object","type":"User","relationName":"TutorToUser"},{"name":"userId","kind":"scalar","type":"String"},{"name":"bio","kind":"scalar","type":"String"},{"name":"expertise","kind":"scalar","type":"String"},{"name":"hourlyRate","kind":"scalar","type":"Float"},{"name":"experience","kind":"scalar","type":"Int"},{"name":"courses","kind":"object","type":"Course","relationName":"CourseToTutor"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"},{"name":"bookings","kind":"object","type":"Booking","relationName":"TutorBookings"},{"name":"reviews","kind":"object","type":"Review","relationName":"ReviewToTutor"}],"dbName":null},"Category":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"name","kind":"scalar","type":"String"},{"name":"courses","kind":"object","type":"Course","relationName":"CategoryToCourse"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"}],"dbName":null},"Course":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"tutorId","kind":"scalar","type":"String"},{"name":"categoryId","kind":"scalar","type":"String"},{"name":"title","kind":"scalar","type":"String"},{"name":"description","kind":"scalar","type":"String"},{"name":"price","kind":"scalar","type":"Float"},{"name":"tutor","kind":"object","type":"Tutor","relationName":"CourseToTutor"},{"name":"category","kind":"object","type":"Category","relationName":"CategoryToCourse"},{"name":"bookings","kind":"object","type":"Booking","relationName":"BookingToCourse"},{"name":"reviews","kind":"object","type":"Review","relationName":"CourseToReview"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"}],"dbName":null},"Booking":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"studentId","kind":"scalar","type":"String"},{"name":"tutorId","kind":"scalar","type":"String"},{"name":"courseId","kind":"scalar","type":"String"},{"name":"date","kind":"scalar","type":"DateTime"},{"name":"status","kind":"enum","type":"BookingStatus"},{"name":"student","kind":"object","type":"User","relationName":"StudentBookings"},{"name":"tutor","kind":"object","type":"Tutor","relationName":"TutorBookings"},{"name":"course","kind":"object","type":"Course","relationName":"BookingToCourse"},{"name":"review","kind":"object","type":"Review","relationName":"BookingToReview"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"}],"dbName":null},"Review":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"rating","kind":"scalar","type":"Int"},{"name":"comment","kind":"scalar","type":"String"},{"name":"studentId","kind":"scalar","type":"String"},{"name":"Student","kind":"object","type":"User","relationName":"StudentReviews"},{"name":"tutorId","kind":"scalar","type":"String"},{"name":"tutor","kind":"object","type":"Tutor","relationName":"ReviewToTutor"},{"name":"courseId","kind":"scalar","type":"String"},{"name":"course","kind":"object","type":"Course","relationName":"CourseToReview"},{"name":"bookingId","kind":"scalar","type":"String"},{"name":"booking","kind":"object","type":"Booking","relationName":"BookingToReview"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"}],"dbName":null}},"enums":{},"types":{}}');
+config.runtimeDataModel = JSON.parse('{"models":{"User":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"name","kind":"scalar","type":"String"},{"name":"email","kind":"scalar","type":"String"},{"name":"password","kind":"scalar","type":"String"},{"name":"role","kind":"enum","type":"Role"},{"name":"avatar","kind":"scalar","type":"String"},{"name":"isBanned","kind":"scalar","type":"Boolean"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"},{"name":"tutorProfile","kind":"object","type":"Tutor","relationName":"TutorToUser"},{"name":"bookings","kind":"object","type":"Booking","relationName":"StudentBookings"},{"name":"review","kind":"object","type":"Review","relationName":"StudentReviews"},{"name":"notifications","kind":"object","type":"Notification","relationName":"NotificationToUser"}],"dbName":null},"Tutor":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"user","kind":"object","type":"User","relationName":"TutorToUser"},{"name":"userId","kind":"scalar","type":"String"},{"name":"bio","kind":"scalar","type":"String"},{"name":"expertise","kind":"scalar","type":"String"},{"name":"hourlyRate","kind":"scalar","type":"Float"},{"name":"experience","kind":"scalar","type":"Int"},{"name":"courses","kind":"object","type":"Course","relationName":"CourseToTutor"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"},{"name":"bookings","kind":"object","type":"Booking","relationName":"TutorBookings"},{"name":"reviews","kind":"object","type":"Review","relationName":"ReviewToTutor"}],"dbName":null},"Category":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"name","kind":"scalar","type":"String"},{"name":"courses","kind":"object","type":"Course","relationName":"CategoryToCourse"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"}],"dbName":null},"Course":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"tutorId","kind":"scalar","type":"String"},{"name":"categoryId","kind":"scalar","type":"String"},{"name":"title","kind":"scalar","type":"String"},{"name":"description","kind":"scalar","type":"String"},{"name":"price","kind":"scalar","type":"Float"},{"name":"tutor","kind":"object","type":"Tutor","relationName":"CourseToTutor"},{"name":"category","kind":"object","type":"Category","relationName":"CategoryToCourse"},{"name":"bookings","kind":"object","type":"Booking","relationName":"BookingToCourse"},{"name":"reviews","kind":"object","type":"Review","relationName":"CourseToReview"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"}],"dbName":null},"Booking":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"studentId","kind":"scalar","type":"String"},{"name":"tutorId","kind":"scalar","type":"String"},{"name":"courseId","kind":"scalar","type":"String"},{"name":"date","kind":"scalar","type":"DateTime"},{"name":"status","kind":"enum","type":"BookingStatus"},{"name":"paymentStatus","kind":"enum","type":"PaymentStatus"},{"name":"classroomLink","kind":"scalar","type":"String"},{"name":"student","kind":"object","type":"User","relationName":"StudentBookings"},{"name":"tutor","kind":"object","type":"Tutor","relationName":"TutorBookings"},{"name":"course","kind":"object","type":"Course","relationName":"BookingToCourse"},{"name":"review","kind":"object","type":"Review","relationName":"BookingToReview"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"}],"dbName":null},"Review":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"rating","kind":"scalar","type":"Int"},{"name":"comment","kind":"scalar","type":"String"},{"name":"studentId","kind":"scalar","type":"String"},{"name":"Student","kind":"object","type":"User","relationName":"StudentReviews"},{"name":"tutorId","kind":"scalar","type":"String"},{"name":"tutor","kind":"object","type":"Tutor","relationName":"ReviewToTutor"},{"name":"courseId","kind":"scalar","type":"String"},{"name":"course","kind":"object","type":"Course","relationName":"CourseToReview"},{"name":"bookingId","kind":"scalar","type":"String"},{"name":"booking","kind":"object","type":"Booking","relationName":"BookingToReview"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"}],"dbName":null},"Notification":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"userId","kind":"scalar","type":"String"},{"name":"user","kind":"object","type":"User","relationName":"NotificationToUser"},{"name":"type","kind":"scalar","type":"String"},{"name":"title","kind":"scalar","type":"String"},{"name":"message","kind":"scalar","type":"String"},{"name":"isRead","kind":"scalar","type":"Boolean"},{"name":"createdAt","kind":"scalar","type":"DateTime"}],"dbName":null}},"enums":{},"types":{}}');
 config.parameterizationSchema = {
-  strings: JSON.parse('["where","user","orderBy","cursor","tutor","courses","_count","category","student","course","Student","booking","review","bookings","reviews","tutorProfile","User.findUnique","User.findUniqueOrThrow","User.findFirst","User.findFirstOrThrow","User.findMany","data","User.createOne","User.createMany","User.createManyAndReturn","User.updateOne","User.updateMany","User.updateManyAndReturn","create","update","User.upsertOne","User.deleteOne","User.deleteMany","having","_min","_max","User.groupBy","User.aggregate","Tutor.findUnique","Tutor.findUniqueOrThrow","Tutor.findFirst","Tutor.findFirstOrThrow","Tutor.findMany","Tutor.createOne","Tutor.createMany","Tutor.createManyAndReturn","Tutor.updateOne","Tutor.updateMany","Tutor.updateManyAndReturn","Tutor.upsertOne","Tutor.deleteOne","Tutor.deleteMany","_avg","_sum","Tutor.groupBy","Tutor.aggregate","Category.findUnique","Category.findUniqueOrThrow","Category.findFirst","Category.findFirstOrThrow","Category.findMany","Category.createOne","Category.createMany","Category.createManyAndReturn","Category.updateOne","Category.updateMany","Category.updateManyAndReturn","Category.upsertOne","Category.deleteOne","Category.deleteMany","Category.groupBy","Category.aggregate","Course.findUnique","Course.findUniqueOrThrow","Course.findFirst","Course.findFirstOrThrow","Course.findMany","Course.createOne","Course.createMany","Course.createManyAndReturn","Course.updateOne","Course.updateMany","Course.updateManyAndReturn","Course.upsertOne","Course.deleteOne","Course.deleteMany","Course.groupBy","Course.aggregate","Booking.findUnique","Booking.findUniqueOrThrow","Booking.findFirst","Booking.findFirstOrThrow","Booking.findMany","Booking.createOne","Booking.createMany","Booking.createManyAndReturn","Booking.updateOne","Booking.updateMany","Booking.updateManyAndReturn","Booking.upsertOne","Booking.deleteOne","Booking.deleteMany","Booking.groupBy","Booking.aggregate","Review.findUnique","Review.findUniqueOrThrow","Review.findFirst","Review.findFirstOrThrow","Review.findMany","Review.createOne","Review.createMany","Review.createManyAndReturn","Review.updateOne","Review.updateMany","Review.updateManyAndReturn","Review.upsertOne","Review.deleteOne","Review.deleteMany","Review.groupBy","Review.aggregate","AND","OR","NOT","id","rating","comment","studentId","tutorId","courseId","bookingId","createdAt","updatedAt","equals","in","notIn","lt","lte","gt","gte","not","contains","startsWith","endsWith","date","BookingStatus","status","categoryId","title","description","price","name","every","some","none","userId","bio","expertise","hourlyRate","experience","email","password","Role","role","avatar","isBanned","is","isNot","connectOrCreate","upsert","disconnect","delete","connect","createMany","set","updateMany","deleteMany","increment","decrement","multiply","divide"]'),
-  graph: "xgM7YA8MAADKAQAgDQAAyQEAIA8AANYBACB4AADSAQAweQAAIAAQegAA0gEAMHsBAAAAAYIBQADCAQAhgwFAAMIBACGWAQEAwQEAIZ8BAQAAAAGgAQEAwQEAIaIBAADTAaIBIqMBAQDUAQAhpAEgANUBACEBAAAAAQAgDwEAAMgBACAFAADDAQAgDQAAyQEAIA4AAMoBACB4AADFAQAweQAAAwAQegAAxQEAMHsBAMEBACGCAUAAwgEAIYMBQADCAQAhmgEBAMEBACGbAQEAwQEAIZwBAQDBAQAhnQEIAMYBACGeAQIAxwEAIQEAAAADACAPBAAA2AEAIAcAAN8BACANAADJAQAgDgAAygEAIHgAAN4BADB5AAAFABB6AADeAQAwewEAwQEAIX8BAMEBACGCAUAAwgEAIYMBQADCAQAhkgEBAMEBACGTAQEAwQEAIZQBAQDBAQAhlQEIAMYBACEEBAAAiAMAIAcAAIwDACANAADkAgAgDgAA5QIAIA8EAADYAQAgBwAA3wEAIA0AAMkBACAOAADKAQAgeAAA3gEAMHkAAAUAEHoAAN4BADB7AQAAAAF_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_ADAMAQAAwAIAIAUAAMECACANAADCAgAgDgAAwwIAIHsBAOYBACGCAUAA6QEAIYMBQADpAQAhmgEBAOYBACGbAQEA5gEAIZwBAQDmAQAhnQEIAIgCACGeAQIA5wEAIQIAAAA2ACAVAABCACAIewEA5gEAIYIBQADpAQAhgwFAAOkBACGaAQEA5gEAIZsBAQDmAQAhnAEBAOYBACGdAQgAiAIAIZ4BAgDnAQAhAgAAAAMAIBUAAEQAIAIAAAADACAVAABEACADAAAANgAgHAAAPQAgHQAAQgAgAQAAADYAIAEAAAADACAFBgAAuwIAICIAAL4CACAjAAC9AgAgNAAAvAIAIDUAAL8CACALeAAAxAEAMHkAAEsAEHoAAMQBADB7AQCqAQAhggFAAK0BACGDAUAArQEAIZoBAQCqAQAhmwEBAKoBACGcAQEAqgEAIZ0BCAC9AQAhngECAKsBACEDAAAAAwAgAgAASgAwIQAASwAgAwAAAAMAIAIAADkAMAMAADYAIAgFAADDAQAgeAAAwAEAMHkAAFEAEHoAAMABADB7AQAAAAGCAUAAwgEAIYMBQADCAQAhlgEBAAAAAQEAAABOACABAAAATgAgCAUAAMMBACB4AADAAQAweQAAUQAQegAAwAEAMHsBAMEBACGCAUAAwgEAIYMBQADCAQAhlgEBAMEBACEBBQAAugIAIAMAAABRACACAABSADADAABOACADAAAAUQAgAgAAUgAwAwAATgAgAwAAAFEAIAIAAFIAMAMAAE4AIAUFAAC5AgAgewEAAAABggFAAAAAAYMBQAAAAAGWAQEAAAABARUAAFYAIAR7AQAAAAGCAUAAAAABgwFAAAAAAZYBAQAAAAEBFQAAWAAwARUAAFgAMAUFAACsAgAgewEA5gEAIYIBQADpAQAhgwFAAOkBACGWAQEA5gEAIQIAAABOACAVAABbACAEewEA5gEAIYIBQADpAQAhgwFAAOkBACGWAQEA5gEAIQIAAABRACAVAABdACACAAAAUQAgFQAAXQAgAwAAAE4AIBwAAFYAIB0AAFsAIAEAAABOACABAAAAUQAgAwYAAKkCACAiAACrAgAgIwAAqgIAIAd4AAC_AQAweQAAZAAQegAAvwEAMHsBAKoBACGCAUAArQEAIYMBQACtAQAhlgEBAKoBACEDAAAAUQAgAgAAYwAwIQAAZAAgAwAAAFEAIAIAAFIAMAMAAE4AIAEAAAAHACABAAAABwAgAwAAAAUAIAIAAAYAMAMAAAcAIAMAAAAFACACAAAGADADAAAHACADAAAABQAgAgAABgAwAwAABwAgDAQAAKUCACAHAACmAgAgDQAApwIAIA4AAKgCACB7AQAAAAF_AQAAAAGCAUAAAAABgwFAAAAAAZIBAQAAAAGTAQEAAAABlAEBAAAAAZUBCAAAAAEBFQAAbAAgCHsBAAAAAX8BAAAAAYIBQAAAAAGDAUAAAAABkgEBAAAAAZMBAQAAAAGUAQEAAAABlQEIAAAAAQEVAABuADABFQAAbgAwDAQAAIkCACAHAACKAgAgDQAAiwIAIA4AAIwCACB7AQDmAQAhfwEA5gEAIYIBQADpAQAhgwFAAOkBACGSAQEA5gEAIZMBAQDmAQAhlAEBAOYBACGVAQgAiAIAIQIAAAAHACAVAABxACAIewEA5gEAIX8BAOYBACGCAUAA6QEAIYMBQADpAQAhkgEBAOYBACGTAQEA5gEAIZQBAQDmAQAhlQEIAIgCACECAAAABQAgFQAAcwAgAgAAAAUAIBUAAHMAIAMAAAAHACAcAABsACAdAABxACABAAAABwAgAQAAAAUAIAUGAACDAgAgIgAAhgIAICMAAIUCACA0AACEAgAgNQAAhwIAIAt4AAC8AQAweQAAegAQegAAvAEAMHsBAKoBACF_AQCqAQAhggFAAK0BACGDAUAArQEAIZIBAQCqAQAhkwEBAKoBACGUAQEAqgEAIZUBCAC9AQAhAwAAAAUAIAIAAHkAMCEAAHoAIAMAAAAFACACAAAGADADAAAHACABAAAADQAgAQAAAA0AIAMAAAALACACAAAMADADAAANACADAAAACwAgAgAADAAwAwAADQAgAwAAAAsAIAIAAAwAMAMAAA0AIAwEAACAAgAgCAAA_wEAIAkAAIECACAMAACCAgAgewEAAAABfgEAAAABfwEAAAABgAEBAAAAAYIBQAAAAAGDAUAAAAABjwFAAAAAAZEBAAAAkQECARUAAIIBACAIewEAAAABfgEAAAABfwEAAAABgAEBAAAAAYIBQAAAAAGDAUAAAAABjwFAAAAAAZEBAAAAkQECARUAAIQBADABFQAAhAEAMAwEAAD3AQAgCAAA9gEAIAkAAPgBACAMAAD5AQAgewEA5gEAIX4BAOYBACF_AQDmAQAhgAEBAOYBACGCAUAA6QEAIYMBQADpAQAhjwFAAOkBACGRAQAA9QGRASICAAAADQAgFQAAhwEAIAh7AQDmAQAhfgEA5gEAIX8BAOYBACGAAQEA5gEAIYIBQADpAQAhgwFAAOkBACGPAUAA6QEAIZEBAAD1AZEBIgIAAAALACAVAACJAQAgAgAAAAsAIBUAAIkBACADAAAADQAgHAAAggEAIB0AAIcBACABAAAADQAgAQAAAAsAIAMGAADyAQAgIgAA9AEAICMAAPMBACALeAAAuAEAMHkAAJABABB6AAC4AQAwewEAqgEAIX4BAKoBACF_AQCqAQAhgAEBAKoBACGCAUAArQEAIYMBQACtAQAhjwFAAK0BACGRAQAAuQGRASIDAAAACwAgAgAAjwEAMCEAAJABACADAAAACwAgAgAADAAwAwAADQAgAQAAABIAIAEAAAASACADAAAADwAgAgAAEQAwAwAAEgAgAwAAAA8AIAIAABEAMAMAABIAIAMAAAAPACACAAARADADAAASACANBAAA7wEAIAkAAPABACAKAADuAQAgCwAA8QEAIHsBAAAAAXwCAAAAAX0BAAAAAX4BAAAAAX8BAAAAAYABAQAAAAGBAQEAAAABggFAAAAAAYMBQAAAAAEBFQAAmAEAIAl7AQAAAAF8AgAAAAF9AQAAAAF-AQAAAAF_AQAAAAGAAQEAAAABgQEBAAAAAYIBQAAAAAGDAUAAAAABARUAAJoBADABFQAAmgEAMA0EAADrAQAgCQAA7AEAIAoAAOoBACALAADtAQAgewEA5gEAIXwCAOcBACF9AQDoAQAhfgEA5gEAIX8BAOYBACGAAQEA5gEAIYEBAQDmAQAhggFAAOkBACGDAUAA6QEAIQIAAAASACAVAACdAQAgCXsBAOYBACF8AgDnAQAhfQEA6AEAIX4BAOYBACF_AQDmAQAhgAEBAOYBACGBAQEA5gEAIYIBQADpAQAhgwFAAOkBACECAAAADwAgFQAAnwEAIAIAAAAPACAVAACfAQAgAwAAABIAIBwAAJgBACAdAACdAQAgAQAAABIAIAEAAAAPACAGBgAA4QEAICIAAOQBACAjAADjAQAgNAAA4gEAIDUAAOUBACB9AADgAQAgDHgAAKkBADB5AACmAQAQegAAqQEAMHsBAKoBACF8AgCrAQAhfQEArAEAIX4BAKoBACF_AQCqAQAhgAEBAKoBACGBAQEAqgEAIYIBQACtAQAhgwFAAK0BACEDAAAADwAgAgAApQEAMCEAAKYBACADAAAADwAgAgAAEQAwAwAAEgAgDHgAAKkBADB5AACmAQAQegAAqQEAMHsBAKoBACF8AgCrAQAhfQEArAEAIX4BAKoBACF_AQCqAQAhgAEBAKoBACGBAQEAqgEAIYIBQACtAQAhgwFAAK0BACEOBgAArwEAICIAALcBACAjAAC3AQAghAEBAAAAAYUBAQAAAASGAQEAAAAEhwEBAAAAAYgBAQAAAAGJAQEAAAABigEBAAAAAYsBAQC2AQAhjAEBAAAAAY0BAQAAAAGOAQEAAAABDQYAAK8BACAiAACvAQAgIwAArwEAIDQAALUBACA1AACvAQAghAECAAAAAYUBAgAAAASGAQIAAAAEhwECAAAAAYgBAgAAAAGJAQIAAAABigECAAAAAYsBAgC0AQAhDgYAALIBACAiAACzAQAgIwAAswEAIIQBAQAAAAGFAQEAAAAFhgEBAAAABYcBAQAAAAGIAQEAAAABiQEBAAAAAYoBAQAAAAGLAQEAsQEAIYwBAQAAAAGNAQEAAAABjgEBAAAAAQsGAACvAQAgIgAAsAEAICMAALABACCEAUAAAAABhQFAAAAABIYBQAAAAASHAUAAAAABiAFAAAAAAYkBQAAAAAGKAUAAAAABiwFAAK4BACELBgAArwEAICIAALABACAjAACwAQAghAFAAAAAAYUBQAAAAASGAUAAAAAEhwFAAAAAAYgBQAAAAAGJAUAAAAABigFAAAAAAYsBQACuAQAhCIQBAgAAAAGFAQIAAAAEhgECAAAABIcBAgAAAAGIAQIAAAABiQECAAAAAYoBAgAAAAGLAQIArwEAIQiEAUAAAAABhQFAAAAABIYBQAAAAASHAUAAAAABiAFAAAAAAYkBQAAAAAGKAUAAAAABiwFAALABACEOBgAAsgEAICIAALMBACAjAACzAQAghAEBAAAAAYUBAQAAAAWGAQEAAAAFhwEBAAAAAYgBAQAAAAGJAQEAAAABigEBAAAAAYsBAQCxAQAhjAEBAAAAAY0BAQAAAAGOAQEAAAABCIQBAgAAAAGFAQIAAAAFhgECAAAABYcBAgAAAAGIAQIAAAABiQECAAAAAYoBAgAAAAGLAQIAsgEAIQuEAQEAAAABhQEBAAAABYYBAQAAAAWHAQEAAAABiAEBAAAAAYkBAQAAAAGKAQEAAAABiwEBALMBACGMAQEAAAABjQEBAAAAAY4BAQAAAAENBgAArwEAICIAAK8BACAjAACvAQAgNAAAtQEAIDUAAK8BACCEAQIAAAABhQECAAAABIYBAgAAAASHAQIAAAABiAECAAAAAYkBAgAAAAGKAQIAAAABiwECALQBACEIhAEIAAAAAYUBCAAAAASGAQgAAAAEhwEIAAAAAYgBCAAAAAGJAQgAAAABigEIAAAAAYsBCAC1AQAhDgYAAK8BACAiAAC3AQAgIwAAtwEAIIQBAQAAAAGFAQEAAAAEhgEBAAAABIcBAQAAAAGIAQEAAAABiQEBAAAAAYoBAQAAAAGLAQEAtgEAIYwBAQAAAAGNAQEAAAABjgEBAAAAAQuEAQEAAAABhQEBAAAABIYBAQAAAASHAQEAAAABiAEBAAAAAYkBAQAAAAGKAQEAAAABiwEBALcBACGMAQEAAAABjQEBAAAAAY4BAQAAAAELeAAAuAEAMHkAAJABABB6AAC4AQAwewEAqgEAIX4BAKoBACF_AQCqAQAhgAEBAKoBACGCAUAArQEAIYMBQACtAQAhjwFAAK0BACGRAQAAuQGRASIHBgAArwEAICIAALsBACAjAAC7AQAghAEAAACRAQKFAQAAAJEBCIYBAAAAkQEIiwEAALoBkQEiBwYAAK8BACAiAAC7AQAgIwAAuwEAIIQBAAAAkQEChQEAAACRAQiGAQAAAJEBCIsBAAC6AZEBIgSEAQAAAJEBAoUBAAAAkQEIhgEAAACRAQiLAQAAuwGRASILeAAAvAEAMHkAAHoAEHoAALwBADB7AQCqAQAhfwEAqgEAIYIBQACtAQAhgwFAAK0BACGSAQEAqgEAIZMBAQCqAQAhlAEBAKoBACGVAQgAvQEAIQ0GAACvAQAgIgAAtQEAICMAALUBACA0AAC1AQAgNQAAtQEAIIQBCAAAAAGFAQgAAAAEhgEIAAAABIcBCAAAAAGIAQgAAAABiQEIAAAAAYoBCAAAAAGLAQgAvgEAIQ0GAACvAQAgIgAAtQEAICMAALUBACA0AAC1AQAgNQAAtQEAIIQBCAAAAAGFAQgAAAAEhgEIAAAABIcBCAAAAAGIAQgAAAABiQEIAAAAAYoBCAAAAAGLAQgAvgEAIQd4AAC_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_AQDBAQAhgAEBAMEBACGCAUAAwgEAIYMBQADCAQAhjwFAAMIBACGRAQAA3AGRASIEhAEAAACRAQKFAQAAAJEBCIYBAAAAkQEIiwEAALsBkQEiEgQAANgBACAJAADZAQAgCgAAyAEAIAsAANoBACB4AADXAQAweQAADwAQegAA1wEAMHsBAMEBACF8AgDHAQAhfQEA1AEAIX4BAMEBACF_AQDBAQAhgAEBAMEBACGBAQEAwQEAIYIBQADCAQAhgwFAAMIBACGlAQAADwAgpgEAAA8AIA8EAADYAQAgBwAA3wEAIA0AAMkBACAOAADKAQAgeAAA3gEAMHkAAAUAEHoAAN4BADB7AQDBAQAhfwEAwQEAIYIBQADCAQAhgwFAAMIBACGSAQEAwQEAIZMBAQDBAQAhlAEBAMEBACGVAQgAxgEAIQoFAADDAQAgeAAAwAEAMHkAAFEAEHoAAMABADB7AQDBAQAhggFAAMIBACGDAUAAwgEAIZYBAQDBAQAhpQEAAFEAIKYBAABRACAAAAAAAAABrQEBAAAAAQWtAQIAAAABsAECAAAAAbEBAgAAAAGyAQIAAAABswECAAAAAQGtAQEAAAABAa0BQAAAAAEFHAAAuQMAIB0AAMUDACCnAQAAugMAIKgBAADEAwAgqwEAAAEAIAUcAAC3AwAgHQAAwgMAIKcBAAC4AwAgqAEAAMEDACCrAQAANgAgBRwAALUDACAdAAC_AwAgpwEAALYDACCoAQAAvgMAIKsBAAAHACAFHAAAswMAIB0AALwDACCnAQAAtAMAIKgBAAC7AwAgqwEAAA0AIAMcAAC5AwAgpwEAALoDACCrAQAAAQAgAxwAALcDACCnAQAAuAMAIKsBAAA2ACADHAAAtQMAIKcBAAC2AwAgqwEAAAcAIAMcAACzAwAgpwEAALQDACCrAQAADQAgAAAAAa0BAAAAkQECBRwAAKgDACAdAACxAwAgpwEAAKkDACCoAQAAsAMAIKsBAAABACAFHAAApgMAIB0AAK4DACCnAQAApwMAIKgBAACtAwAgqwEAADYAIAUcAACkAwAgHQAAqwMAIKcBAAClAwAgqAEAAKoDACCrAQAABwAgBxwAAPoBACAdAAD9AQAgpwEAAPsBACCoAQAA_AEAIKkBAAAPACCqAQAADwAgqwEAABIAIAsEAADvAQAgCQAA8AEAIAoAAO4BACB7AQAAAAF8AgAAAAF9AQAAAAF-AQAAAAF_AQAAAAGAAQEAAAABggFAAAAAAYMBQAAAAAECAAAAEgAgHAAA-gEAIAMAAAAPACAcAAD6AQAgHQAA_gEAIA0AAAAPACAEAADrAQAgCQAA7AEAIAoAAOoBACAVAAD-AQAgewEA5gEAIXwCAOcBACF9AQDoAQAhfgEA5gEAIX8BAOYBACGAAQEA5gEAIYIBQADpAQAhgwFAAOkBACELBAAA6wEAIAkAAOwBACAKAADqAQAgewEA5gEAIXwCAOcBACF9AQDoAQAhfgEA5gEAIX8BAOYBACGAAQEA5gEAIYIBQADpAQAhgwFAAOkBACEDHAAAqAMAIKcBAACpAwAgqwEAAAEAIAMcAACmAwAgpwEAAKcDACCrAQAANgAgAxwAAKQDACCnAQAApQMAIKsBAAAHACADHAAA-gEAIKcBAAD7AQAgqwEAABIAIAAAAAAABa0BCAAAAAGwAQgAAAABsQEIAAAAAbIBCAAAAAGzAQgAAAABBRwAAJoDACAdAACiAwAgpwEAAJsDACCoAQAAoQMAIKsBAAA2ACAFHAAAmAMAIB0AAJ8DACCnAQAAmQMAIKgBAACeAwAgqwEAAE4AIAscAACZAgAwHQAAngIAMKcBAACaAgAwqAEAAJsCADCpAQAAnQIAMKoBAACdAgAwqwEAAJ0CADCsAQAAnAIAIK0BAACdAgAwrgEAAJ8CADCvAQAAoAIAMAscAACNAgAwHQAAkgIAMKcBAACOAgAwqAEAAI8CADCpAQAAkQIAMKoBAACRAgAwqwEAAJECADCsAQAAkAIAIK0BAACRAgAwrgEAAJMCADCvAQAAlAIAMAsEAADvAQAgCgAA7gEAIAsAAPEBACB7AQAAAAF8AgAAAAF9AQAAAAF-AQAAAAF_AQAAAAGBAQEAAAABggFAAAAAAYMBQAAAAAECAAAAEgAgHAAAmAIAIAMAAAASACAcAACYAgAgHQAAlwIAIAEVAACdAwAwEAQAANgBACAJAADZAQAgCgAAyAEAIAsAANoBACB4AADXAQAweQAADwAQegAA1wEAMHsBAAAAAXwCAMcBACF9AQDUAQAhfgEAwQEAIX8BAMEBACGAAQEAwQEAIYEBAQAAAAGCAUAAwgEAIYMBQADCAQAhAgAAABIAIBUAAJcCACACAAAAlQIAIBUAAJYCACAMeAAAlAIAMHkAAJUCABB6AACUAgAwewEAwQEAIXwCAMcBACF9AQDUAQAhfgEAwQEAIX8BAMEBACGAAQEAwQEAIYEBAQDBAQAhggFAAMIBACGDAUAAwgEAIQx4AACUAgAweQAAlQIAEHoAAJQCADB7AQDBAQAhfAIAxwEAIX0BANQBACF-AQDBAQAhfwEAwQEAIYABAQDBAQAhgQEBAMEBACGCAUAAwgEAIYMBQADCAQAhCHsBAOYBACF8AgDnAQAhfQEA6AEAIX4BAOYBACF_AQDmAQAhgQEBAOYBACGCAUAA6QEAIYMBQADpAQAhCwQAAOsBACAKAADqAQAgCwAA7QEAIHsBAOYBACF8AgDnAQAhfQEA6AEAIX4BAOYBACF_AQDmAQAhgQEBAOYBACGCAUAA6QEAIYMBQADpAQAhCwQAAO8BACAKAADuAQAgCwAA8QEAIHsBAAAAAXwCAAAAAX0BAAAAAX4BAAAAAX8BAAAAAYEBAQAAAAGCAUAAAAABgwFAAAAAAQoEAACAAgAgCAAA_wEAIAwAAIICACB7AQAAAAF-AQAAAAF_AQAAAAGCAUAAAAABgwFAAAAAAY8BQAAAAAGRAQAAAJEBAgIAAAANACAcAACkAgAgAwAAAA0AIBwAAKQCACAdAACjAgAgARUAAJwDADAPBAAA2AEAIAgAAMgBACAJAADZAQAgDAAA3QEAIHgAANsBADB5AAALABB6AADbAQAwewEAAAABfgEAwQEAIX8BAMEBACGAAQEAwQEAIYIBQADCAQAhgwFAAMIBACGPAUAAwgEAIZEBAADcAZEBIgIAAAANACAVAACjAgAgAgAAAKECACAVAACiAgAgC3gAAKACADB5AAChAgAQegAAoAIAMHsBAMEBACF-AQDBAQAhfwEAwQEAIYABAQDBAQAhggFAAMIBACGDAUAAwgEAIY8BQADCAQAhkQEAANwBkQEiC3gAAKACADB5AAChAgAQegAAoAIAMHsBAMEBACF-AQDBAQAhfwEAwQEAIYABAQDBAQAhggFAAMIBACGDAUAAwgEAIY8BQADCAQAhkQEAANwBkQEiB3sBAOYBACF-AQDmAQAhfwEA5gEAIYIBQADpAQAhgwFAAOkBACGPAUAA6QEAIZEBAAD1AZEBIgoEAAD3AQAgCAAA9gEAIAwAAPkBACB7AQDmAQAhfgEA5gEAIX8BAOYBACGCAUAA6QEAIYMBQADpAQAhjwFAAOkBACGRAQAA9QGRASIKBAAAgAIAIAgAAP8BACAMAACCAgAgewEAAAABfgEAAAABfwEAAAABggFAAAAAAYMBQAAAAAGPAUAAAAABkQEAAACRAQIDHAAAmgMAIKcBAACbAwAgqwEAADYAIAMcAACYAwAgpwEAAJkDACCrAQAATgAgBBwAAJkCADCnAQAAmgIAMKsBAACdAgAwrAEAAJwCACAEHAAAjQIAMKcBAACOAgAwqwEAAJECADCsAQAAkAIAIAAAAAscAACtAgAwHQAAsgIAMKcBAACuAgAwqAEAAK8CADCpAQAAsQIAMKoBAACxAgAwqwEAALECADCsAQAAsAIAIK0BAACxAgAwrgEAALMCADCvAQAAtAIAMAoEAAClAgAgDQAApwIAIA4AAKgCACB7AQAAAAF_AQAAAAGCAUAAAAABgwFAAAAAAZMBAQAAAAGUAQEAAAABlQEIAAAAAQIAAAAHACAcAAC4AgAgAwAAAAcAIBwAALgCACAdAAC3AgAgARUAAJcDADAPBAAA2AEAIAcAAN8BACANAADJAQAgDgAAygEAIHgAAN4BADB5AAAFABB6AADeAQAwewEAAAABfwEAwQEAIYIBQADCAQAhgwFAAMIBACGSAQEAwQEAIZMBAQDBAQAhlAEBAMEBACGVAQgAxgEAIQIAAAAHACAVAAC3AgAgAgAAALUCACAVAAC2AgAgC3gAALQCADB5AAC1AgAQegAAtAIAMHsBAMEBACF_AQDBAQAhggFAAMIBACGDAUAAwgEAIZIBAQDBAQAhkwEBAMEBACGUAQEAwQEAIZUBCADGAQAhC3gAALQCADB5AAC1AgAQegAAtAIAMHsBAMEBACF_AQDBAQAhggFAAMIBACGDAUAAwgEAIZIBAQDBAQAhkwEBAMEBACGUAQEAwQEAIZUBCADGAQAhB3sBAOYBACF_AQDmAQAhggFAAOkBACGDAUAA6QEAIZMBAQDmAQAhlAEBAOYBACGVAQgAiAIAIQoEAACJAgAgDQAAiwIAIA4AAIwCACB7AQDmAQAhfwEA5gEAIYIBQADpAQAhgwFAAOkBACGTAQEA5gEAIZQBAQDmAQAhlQEIAIgCACEKBAAApQIAIA0AAKcCACAOAACoAgAgewEAAAABfwEAAAABggFAAAAAAYMBQAAAAAGTAQEAAAABlAEBAAAAAZUBCAAAAAEEHAAArQIAMKcBAACuAgAwqwEAALECADCsAQAAsAIAIAAAAAAAAAUcAACPAwAgHQAAlQMAIKcBAACQAwAgqAEAAJQDACCrAQAAAQAgCxwAANYCADAdAADaAgAwpwEAANcCADCoAQAA2AIAMKkBAACxAgAwqgEAALECADCrAQAAsQIAMKwBAADZAgAgrQEAALECADCuAQAA2wIAMK8BAAC0AgAwCxwAAM0CADAdAADRAgAwpwEAAM4CADCoAQAAzwIAMKkBAACdAgAwqgEAAJ0CADCrAQAAnQIAMKwBAADQAgAgrQEAAJ0CADCuAQAA0gIAMK8BAACgAgAwCxwAAMQCADAdAADIAgAwpwEAAMUCADCoAQAAxgIAMKkBAACRAgAwqgEAAJECADCrAQAAkQIAMKwBAADHAgAgrQEAAJECADCuAQAAyQIAMK8BAACUAgAwCwkAAPABACAKAADuAQAgCwAA8QEAIHsBAAAAAXwCAAAAAX0BAAAAAX4BAAAAAYABAQAAAAGBAQEAAAABggFAAAAAAYMBQAAAAAECAAAAEgAgHAAAzAIAIAMAAAASACAcAADMAgAgHQAAywIAIAEVAACTAwAwAgAAABIAIBUAAMsCACACAAAAlQIAIBUAAMoCACAIewEA5gEAIXwCAOcBACF9AQDoAQAhfgEA5gEAIYABAQDmAQAhgQEBAOYBACGCAUAA6QEAIYMBQADpAQAhCwkAAOwBACAKAADqAQAgCwAA7QEAIHsBAOYBACF8AgDnAQAhfQEA6AEAIX4BAOYBACGAAQEA5gEAIYEBAQDmAQAhggFAAOkBACGDAUAA6QEAIQsJAADwAQAgCgAA7gEAIAsAAPEBACB7AQAAAAF8AgAAAAF9AQAAAAF-AQAAAAGAAQEAAAABgQEBAAAAAYIBQAAAAAGDAUAAAAABCggAAP8BACAJAACBAgAgDAAAggIAIHsBAAAAAX4BAAAAAYABAQAAAAGCAUAAAAABgwFAAAAAAY8BQAAAAAGRAQAAAJEBAgIAAAANACAcAADVAgAgAwAAAA0AIBwAANUCACAdAADUAgAgARUAAJIDADACAAAADQAgFQAA1AIAIAIAAAChAgAgFQAA0wIAIAd7AQDmAQAhfgEA5gEAIYABAQDmAQAhggFAAOkBACGDAUAA6QEAIY8BQADpAQAhkQEAAPUBkQEiCggAAPYBACAJAAD4AQAgDAAA-QEAIHsBAOYBACF-AQDmAQAhgAEBAOYBACGCAUAA6QEAIYMBQADpAQAhjwFAAOkBACGRAQAA9QGRASIKCAAA_wEAIAkAAIECACAMAACCAgAgewEAAAABfgEAAAABgAEBAAAAAYIBQAAAAAGDAUAAAAABjwFAAAAAAZEBAAAAkQECCgcAAKYCACANAACnAgAgDgAAqAIAIHsBAAAAAYIBQAAAAAGDAUAAAAABkgEBAAAAAZMBAQAAAAGUAQEAAAABlQEIAAAAAQIAAAAHACAcAADeAgAgAwAAAAcAIBwAAN4CACAdAADdAgAgARUAAJEDADACAAAABwAgFQAA3QIAIAIAAAC1AgAgFQAA3AIAIAd7AQDmAQAhggFAAOkBACGDAUAA6QEAIZIBAQDmAQAhkwEBAOYBACGUAQEA5gEAIZUBCACIAgAhCgcAAIoCACANAACLAgAgDgAAjAIAIHsBAOYBACGCAUAA6QEAIYMBQADpAQAhkgEBAOYBACGTAQEA5gEAIZQBAQDmAQAhlQEIAIgCACEKBwAApgIAIA0AAKcCACAOAACoAgAgewEAAAABggFAAAAAAYMBQAAAAAGSAQEAAAABkwEBAAAAAZQBAQAAAAGVAQgAAAABAxwAAI8DACCnAQAAkAMAIKsBAAABACAEHAAA1gIAMKcBAADXAgAwqwEAALECADCsAQAA2QIAIAQcAADNAgAwpwEAAM4CADCrAQAAnQIAMKwBAADQAgAgBBwAAMQCADCnAQAAxQIAMKsBAACRAgAwrAEAAMcCACAEDAAA5QIAIA0AAOQCACAPAACIAwAgowEAAOABACAAAAAAAAGtAQAAAKIBAgGtASAAAAABBxwAAIADACAdAACDAwAgpwEAAIEDACCoAQAAggMAIKkBAAADACCqAQAAAwAgqwEAADYAIAscAAD3AgAwHQAA-wIAMKcBAAD4AgAwqAEAAPkCADCpAQAAnQIAMKoBAACdAgAwqwEAAJ0CADCsAQAA-gIAIK0BAACdAgAwrgEAAPwCADCvAQAAoAIAMAscAADuAgAwHQAA8gIAMKcBAADvAgAwqAEAAPACADCpAQAAkQIAMKoBAACRAgAwqwEAAJECADCsAQAA8QIAIK0BAACRAgAwrgEAAPMCADCvAQAAlAIAMAsEAADvAQAgCQAA8AEAIAsAAPEBACB7AQAAAAF8AgAAAAF9AQAAAAF_AQAAAAGAAQEAAAABgQEBAAAAAYIBQAAAAAGDAUAAAAABAgAAABIAIBwAAPYCACADAAAAEgAgHAAA9gIAIB0AAPUCACABFQAAjgMAMAIAAAASACAVAAD1AgAgAgAAAJUCACAVAAD0AgAgCHsBAOYBACF8AgDnAQAhfQEA6AEAIX8BAOYBACGAAQEA5gEAIYEBAQDmAQAhggFAAOkBACGDAUAA6QEAIQsEAADrAQAgCQAA7AEAIAsAAO0BACB7AQDmAQAhfAIA5wEAIX0BAOgBACF_AQDmAQAhgAEBAOYBACGBAQEA5gEAIYIBQADpAQAhgwFAAOkBACELBAAA7wEAIAkAAPABACALAADxAQAgewEAAAABfAIAAAABfQEAAAABfwEAAAABgAEBAAAAAYEBAQAAAAGCAUAAAAABgwFAAAAAAQoEAACAAgAgCQAAgQIAIAwAAIICACB7AQAAAAF_AQAAAAGAAQEAAAABggFAAAAAAYMBQAAAAAGPAUAAAAABkQEAAACRAQICAAAADQAgHAAA_wIAIAMAAAANACAcAAD_AgAgHQAA_gIAIAEVAACNAwAwAgAAAA0AIBUAAP4CACACAAAAoQIAIBUAAP0CACAHewEA5gEAIX8BAOYBACGAAQEA5gEAIYIBQADpAQAhgwFAAOkBACGPAUAA6QEAIZEBAAD1AZEBIgoEAAD3AQAgCQAA-AEAIAwAAPkBACB7AQDmAQAhfwEA5gEAIYABAQDmAQAhggFAAOkBACGDAUAA6QEAIY8BQADpAQAhkQEAAPUBkQEiCgQAAIACACAJAACBAgAgDAAAggIAIHsBAAAAAX8BAAAAAYABAQAAAAGCAUAAAAABgwFAAAAAAY8BQAAAAAGRAQAAAJEBAgoFAADgAgAgDQAA4QIAIA4AAOICACB7AQAAAAGCAUAAAAABgwFAAAAAAZsBAQAAAAGcAQEAAAABnQEIAAAAAZ4BAgAAAAECAAAANgAgHAAAgAMAIAMAAAADACAcAACAAwAgHQAAhAMAIAwAAAADACAFAADBAgAgDQAAwgIAIA4AAMMCACAVAACEAwAgewEA5gEAIYIBQADpAQAhgwFAAOkBACGbAQEA5gEAIZwBAQDmAQAhnQEIAIgCACGeAQIA5wEAIQoFAADBAgAgDQAAwgIAIA4AAMMCACB7AQDmAQAhggFAAOkBACGDAUAA6QEAIZsBAQDmAQAhnAEBAOYBACGdAQgAiAIAIZ4BAgDnAQAhAxwAAIADACCnAQAAgQMAIKsBAAA2ACAEHAAA9wIAMKcBAAD4AgAwqwEAAJ0CADCsAQAA-gIAIAQcAADuAgAwpwEAAO8CADCrAQAAkQIAMKwBAADxAgAgBAEAAOMCACAFAAC6AgAgDQAA5AIAIA4AAOUCACAEBAAAiAMAIAcAAIwDACANAADkAgAgDgAA5QIAIAQEAACIAwAgCAAA4wIAIAkAAIkDACAMAACLAwAgBQQAAIgDACAJAACJAwAgCgAA4wIAIAsAAIoDACB9AADgAQAgAQUAALoCACAHewEAAAABfwEAAAABgAEBAAAAAYIBQAAAAAGDAUAAAAABjwFAAAAAAZEBAAAAkQECCHsBAAAAAXwCAAAAAX0BAAAAAX8BAAAAAYABAQAAAAGBAQEAAAABggFAAAAAAYMBQAAAAAELDAAAhwMAIA0AAIYDACB7AQAAAAGCAUAAAAABgwFAAAAAAZYBAQAAAAGfAQEAAAABoAEBAAAAAaIBAAAAogECowEBAAAAAaQBIAAAAAECAAAAAQAgHAAAjwMAIAd7AQAAAAGCAUAAAAABgwFAAAAAAZIBAQAAAAGTAQEAAAABlAEBAAAAAZUBCAAAAAEHewEAAAABfgEAAAABgAEBAAAAAYIBQAAAAAGDAUAAAAABjwFAAAAAAZEBAAAAkQECCHsBAAAAAXwCAAAAAX0BAAAAAX4BAAAAAYABAQAAAAGBAQEAAAABggFAAAAAAYMBQAAAAAEDAAAAIAAgHAAAjwMAIB0AAJYDACANAAAAIAAgDAAA7QIAIA0AAOwCACAVAACWAwAgewEA5gEAIYIBQADpAQAhgwFAAOkBACGWAQEA5gEAIZ8BAQDmAQAhoAEBAOYBACGiAQAA6QKiASKjAQEA6AEAIaQBIADqAgAhCwwAAO0CACANAADsAgAgewEA5gEAIYIBQADpAQAhgwFAAOkBACGWAQEA5gEAIZ8BAQDmAQAhoAEBAOYBACGiAQAA6QKiASKjAQEA6AEAIaQBIADqAgAhB3sBAAAAAX8BAAAAAYIBQAAAAAGDAUAAAAABkwEBAAAAAZQBAQAAAAGVAQgAAAABBHsBAAAAAYIBQAAAAAGDAUAAAAABlgEBAAAAAQIAAABOACAcAACYAwAgCwEAAN8CACANAADhAgAgDgAA4gIAIHsBAAAAAYIBQAAAAAGDAUAAAAABmgEBAAAAAZsBAQAAAAGcAQEAAAABnQEIAAAAAZ4BAgAAAAECAAAANgAgHAAAmgMAIAd7AQAAAAF-AQAAAAF_AQAAAAGCAUAAAAABgwFAAAAAAY8BQAAAAAGRAQAAAJEBAgh7AQAAAAF8AgAAAAF9AQAAAAF-AQAAAAF_AQAAAAGBAQEAAAABggFAAAAAAYMBQAAAAAEDAAAAUQAgHAAAmAMAIB0AAKADACAGAAAAUQAgFQAAoAMAIHsBAOYBACGCAUAA6QEAIYMBQADpAQAhlgEBAOYBACEEewEA5gEAIYIBQADpAQAhgwFAAOkBACGWAQEA5gEAIQMAAAADACAcAACaAwAgHQAAowMAIA0AAAADACABAADAAgAgDQAAwgIAIA4AAMMCACAVAACjAwAgewEA5gEAIYIBQADpAQAhgwFAAOkBACGaAQEA5gEAIZsBAQDmAQAhnAEBAOYBACGdAQgAiAIAIZ4BAgDnAQAhCwEAAMACACANAADCAgAgDgAAwwIAIHsBAOYBACGCAUAA6QEAIYMBQADpAQAhmgEBAOYBACGbAQEA5gEAIZwBAQDmAQAhnQEIAIgCACGeAQIA5wEAIQsEAAClAgAgBwAApgIAIA4AAKgCACB7AQAAAAF_AQAAAAGCAUAAAAABgwFAAAAAAZIBAQAAAAGTAQEAAAABlAEBAAAAAZUBCAAAAAECAAAABwAgHAAApAMAIAsBAADfAgAgBQAA4AIAIA4AAOICACB7AQAAAAGCAUAAAAABgwFAAAAAAZoBAQAAAAGbAQEAAAABnAEBAAAAAZ0BCAAAAAGeAQIAAAABAgAAADYAIBwAAKYDACALDAAAhwMAIA8AAIUDACB7AQAAAAGCAUAAAAABgwFAAAAAAZYBAQAAAAGfAQEAAAABoAEBAAAAAaIBAAAAogECowEBAAAAAaQBIAAAAAECAAAAAQAgHAAAqAMAIAMAAAAFACAcAACkAwAgHQAArAMAIA0AAAAFACAEAACJAgAgBwAAigIAIA4AAIwCACAVAACsAwAgewEA5gEAIX8BAOYBACGCAUAA6QEAIYMBQADpAQAhkgEBAOYBACGTAQEA5gEAIZQBAQDmAQAhlQEIAIgCACELBAAAiQIAIAcAAIoCACAOAACMAgAgewEA5gEAIX8BAOYBACGCAUAA6QEAIYMBQADpAQAhkgEBAOYBACGTAQEA5gEAIZQBAQDmAQAhlQEIAIgCACEDAAAAAwAgHAAApgMAIB0AAK8DACANAAAAAwAgAQAAwAIAIAUAAMECACAOAADDAgAgFQAArwMAIHsBAOYBACGCAUAA6QEAIYMBQADpAQAhmgEBAOYBACGbAQEA5gEAIZwBAQDmAQAhnQEIAIgCACGeAQIA5wEAIQsBAADAAgAgBQAAwQIAIA4AAMMCACB7AQDmAQAhggFAAOkBACGDAUAA6QEAIZoBAQDmAQAhmwEBAOYBACGcAQEA5gEAIZ0BCACIAgAhngECAOcBACEDAAAAIAAgHAAAqAMAIB0AALIDACANAAAAIAAgDAAA7QIAIA8AAOsCACAVAACyAwAgewEA5gEAIYIBQADpAQAhgwFAAOkBACGWAQEA5gEAIZ8BAQDmAQAhoAEBAOYBACGiAQAA6QKiASKjAQEA6AEAIaQBIADqAgAhCwwAAO0CACAPAADrAgAgewEA5gEAIYIBQADpAQAhgwFAAOkBACGWAQEA5gEAIZ8BAQDmAQAhoAEBAOYBACGiAQAA6QKiASKjAQEA6AEAIaQBIADqAgAhCwQAAIACACAIAAD_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-WQs_WhxAXARBXgtCXx1DYAREYQRFYgtGZR5HZiJIZwNJaANKaQNLagNMawNNbQNObwtPcCNQcgNRdAtSdSRTdgNUdwNVeAtWeyVXfCtYfQZZfgZafwZbgAEGXIEBBl2DAQZehQELX4YBLGCIAQZhigELYosBLWOMAQZkjQEGZY4BC2aRAS5nkgEyaJMBB2mUAQdqlQEHa5YBB2yXAQdtmQEHbpsBC2-cATNwngEHcaABC3KhATRzogEHdKMBB3WkAQt2pwE1d6gBOw"
+  strings: JSON.parse('["where","user","orderBy","cursor","tutor","courses","_count","category","student","course","Student","booking","review","bookings","reviews","tutorProfile","notifications","User.findUnique","User.findUniqueOrThrow","User.findFirst","User.findFirstOrThrow","User.findMany","data","User.createOne","User.createMany","User.createManyAndReturn","User.updateOne","User.updateMany","User.updateManyAndReturn","create","update","User.upsertOne","User.deleteOne","User.deleteMany","having","_min","_max","User.groupBy","User.aggregate","Tutor.findUnique","Tutor.findUniqueOrThrow","Tutor.findFirst","Tutor.findFirstOrThrow","Tutor.findMany","Tutor.createOne","Tutor.createMany","Tutor.createManyAndReturn","Tutor.updateOne","Tutor.updateMany","Tutor.updateManyAndReturn","Tutor.upsertOne","Tutor.deleteOne","Tutor.deleteMany","_avg","_sum","Tutor.groupBy","Tutor.aggregate","Category.findUnique","Category.findUniqueOrThrow","Category.findFirst","Category.findFirstOrThrow","Category.findMany","Category.createOne","Category.createMany","Category.createManyAndReturn","Category.updateOne","Category.updateMany","Category.updateManyAndReturn","Category.upsertOne","Category.deleteOne","Category.deleteMany","Category.groupBy","Category.aggregate","Course.findUnique","Course.findUniqueOrThrow","Course.findFirst","Course.findFirstOrThrow","Course.findMany","Course.createOne","Course.createMany","Course.createManyAndReturn","Course.updateOne","Course.updateMany","Course.updateManyAndReturn","Course.upsertOne","Course.deleteOne","Course.deleteMany","Course.groupBy","Course.aggregate","Booking.findUnique","Booking.findUniqueOrThrow","Booking.findFirst","Booking.findFirstOrThrow","Booking.findMany","Booking.createOne","Booking.createMany","Booking.createManyAndReturn","Booking.updateOne","Booking.updateMany","Booking.updateManyAndReturn","Booking.upsertOne","Booking.deleteOne","Booking.deleteMany","Booking.groupBy","Booking.aggregate","Review.findUnique","Review.findUniqueOrThrow","Review.findFirst","Review.findFirstOrThrow","Review.findMany","Review.createOne","Review.createMany","Review.createManyAndReturn","Review.updateOne","Review.updateMany","Review.updateManyAndReturn","Review.upsertOne","Review.deleteOne","Review.deleteMany","Review.groupBy","Review.aggregate","Notification.findUnique","Notification.findUniqueOrThrow","Notification.findFirst","Notification.findFirstOrThrow","Notification.findMany","Notification.createOne","Notification.createMany","Notification.createManyAndReturn","Notification.updateOne","Notification.updateMany","Notification.updateManyAndReturn","Notification.upsertOne","Notification.deleteOne","Notification.deleteMany","Notification.groupBy","Notification.aggregate","AND","OR","NOT","id","userId","type","title","message","isRead","createdAt","equals","in","notIn","lt","lte","gt","gte","not","contains","startsWith","endsWith","rating","comment","studentId","tutorId","courseId","bookingId","updatedAt","date","BookingStatus","status","PaymentStatus","paymentStatus","classroomLink","categoryId","description","price","name","every","some","none","bio","expertise","hourlyRate","experience","email","password","Role","role","avatar","isBanned","is","isNot","connectOrCreate","upsert","disconnect","delete","connect","createMany","set","updateMany","deleteMany","increment","decrement","multiply","divide"]'),
+  graph: "gwRDcBAMAADsAQAgDQAA6wEAIA8AAPUBACAQAAD2AQAgiQEAAPEBADCKAQAAJQAQiwEAAPEBADCMAQEAAAABkgFAAOQBACGkAUAA5AEAIa4BAQDjAQAhtgEBAAAAAbcBAQDjAQAhuQEAAPIBuQEiugEBAPMBACG7ASAA9AEAIQEAAAABACAPAQAA6gEAIAUAAOUBACANAADrAQAgDgAA7AEAIIkBAADnAQAwigEAAAMAEIsBAADnAQAwjAEBAOMBACGNAQEA4wEAIZIBQADkAQAhpAFAAOQBACGyAQEA4wEAIbMBAQDjAQAhtAEIAOgBACG1AQIA6QEAIQEAAAADACAPBAAA-QEAIAcAAIECACANAADrAQAgDgAA7AEAIIkBAACAAgAwigEAAAUAEIsBAACAAgAwjAEBAOMBACGPAQEA4wEAIZIBQADkAQAhoQEBAOMBACGkAUAA5AEAIasBAQDjAQAhrAEBAOMBACGtAQgA6AEAIQQEAAC-AwAgBwAAwwMAIA0AAI0DACAOAACOAwAgDwQAAPkBACAHAACBAgAgDQAA6wEAIA4AAOwBACCJAQAAgAIAMIoBAAAFABCLAQAAgAIAMIwBAQAAAAGPAQEA4wEAIZIBQADkAQAhoQEBAOMBACGkAUAA5AEAIasBAQDjAQAhrAEBAOMBACGtAQgA6AEAIQMAAAAFACACAAAGADADAAAHACADAAAABQAgAgAABgAwAwAABwAgAQAAAAUAIBEEAAD5AQAgCAAA6gEAIAkAAPoBACAMAAD_AQAgiQEAAPwBADCKAQAACwAQiwEAAPwBADCMAQEA4wEAIZIBQADkAQAhoAEBAOMBACGhAQEA4wEAIaIBAQDjAQAhpAFAAOQBACGlAUAA5AEAIacBAAD9AacBIqkBAAD-AakBIqoBAQDzAQAhBQQAAL4DACAIAACMAwAgCQAAwAMAIAwAAMIDACCqAQAAigIAIBEEAAD5AQAgCAAA6gEAIAkAAPoBACAMAAD_AQAgiQEAAPwBADCKAQAACwAQiwEAAPwBADCMAQEAAAABkgFAAOQBACGgAQEA4wEAIaEBAQDjAQAhogEBAOMBACGkAUAA5AEAIaUBQADkAQAhpwEAAP0BpwEiqQEAAP4BqQEiqgEBAPMBACEDAAAACwAgAgAADAAwAwAADQAgEAQAAPkBACAJAAD6AQAgCgAA6gEAIAsAAPsBACCJAQAA-AEAMIoBAAAPABCLAQAA-AEAMIwBAQDjAQAhkgFAAOQBACGeAQIA6QEAIZ8BAQDzAQAhoAEBAOMBACGhAQEA4wEAIaIBAQDjAQAhowEBAOMBACGkAUAA5AEAIQEAAAAPACAFBAAAvgMAIAkAAMADACAKAACMAwAgCwAAwQMAIJ8BAACKAgAgEAQAAPkBACAJAAD6AQAgCgAA6gEAIAsAAPsBACCJAQAA-AEAMIoBAAAPABCLAQAA-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_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-QEAIAkAAPoBACAKAADqAQAgCwAA-wEAIIkBAAD4AQAwigEAAA8AEIsBAAD4AQAwjAEBAOMBACGSAUAA5AEAIZ4BAgDpAQAhnwEBAPMBACGgAQEA4wEAIaEBAQDjAQAhogEBAOMBACGjAQEA4wEAIaQBQADkAQAhEQEAAOoBACAFAADlAQAgDQAA6wEAIA4AAOwBACCJAQAA5wEAMIoBAAADABCLAQAA5wEAMIwBAQDjAQAhjQEBAOMBACGSAUAA5AEAIaQBQADkAQAhsgEBAOMBACGzAQEA4wEAIbQBCADoAQAhtQECAOkBACG8AQAAAwAgvQEAAAMAIBEEAAD5AQAgBwAAgQIAIA0AAOsBACAOAADsAQAgiQEAAIACADCKAQAABQAQiwEAAIACADCMAQEA4wEAIY8BAQDjAQAhkgFAAOQBACGhAQEA4wEAIaQBQADkAQAhqwEBAOMBACGsAQEA4wEAIa0BCADoAQAhvAEAAAUAIL0BAAAFACATBAAA-QEAIAgAAOoBACAJAAD6AQAgDAAA_wEAIIkBAAD8AQAwigEAAAsAEIsBAAD8AQAwjAEBAOMBACGSAUAA5AEAIaABAQDjAQAhoQEBAOMBACGiAQEA4wEAIaQBQADkAQAhpQFAAOQBACGnAQAA_QGnASKpAQAA_gGpASKqAQEA8wEAIbwBAAALACC9AQAACwAgEQQAAPkBACAIAADqAQAgCQAA-gEAIAwAAP8BACCJAQAA_AEAMIoBAAALABCLAQAA_AEAMIwBAQDjAQAhkgFAAOQBACGgAQEA4wEAIaEBAQDjAQAhogEBAOMBACGkAUAA5AEAIaUBQADkAQAhpwEAAP0BpwEiqQEAAP4BqQEiqgEBAPMBACEEkwEAAACnAQKUAQAAAKcBCJUBAAAApwEImgEAAN0BpwEiBJMBAAAAqQEClAEAAACpAQiVAQAAAKkBCJoBAADbAakBIhIEAAD5AQAgCQAA-gEAIAoAAOoBACALAAD7AQAgiQEAAPgBADCKAQAADwAQiwEAAPgBADCMAQEA4wEAIZIBQADkAQAhngECAOkBACGfAQEA8wEAIaABAQDjAQAhoQEBAOMBACGiAQEA4wEAIaMBAQDjAQAhpAFAAOQBACG8AQAADwAgvQEAAA8AIA8EAAD5AQAgBwAAgQIAIA0AAOsBACAOAADsAQAgiQEAAIACADCKAQAABQAQiwEAAIACADCMAQEA4wEAIY8BAQDjAQAhkgFAAOQBACGhAQEA4wEAIaQBQADkAQAhqwEBAOMBACGsAQEA4wEAIa0BCADoAQAhCgUAAOUBACCJAQAA4gEAMIoBAABWABCLAQAA4gEAMIwBAQDjAQAhkgFAAOQBACGkAUAA5AEAIa4BAQDjAQAhvAEAAFYAIL0BAABWACAAAAABxAEBAAAAAQHEASAAAAABAcQBQAAAAAEFHQAA_wMAIB4AAIIEACC-AQAAgAQAIL8BAACBBAAgwgEAAAEAIAMdAAD_AwAgvgEAAIAEACDCAQAAAQAgAAAAAAAABcQBAgAAAAHHAQIAAAAByAECAAAAAckBAgAAAAHKAQIAAAABAcQBAQAAAAEFHQAA8QMAIB4AAP0DACC-AQAA8gMAIL8BAAD8AwAgwgEAAAEAIAUdAADvAwAgHgAA-gMAIL4BAADwAwAgvwEAAPkDACDCAQAAOwAgBR0AAO0DACAeAAD3AwAgvgEAAO4DACC_AQAA9gMAIMIBAAAHACAFHQAA6wMAIB4AAPQDACC-AQAA7AMAIL8BAADzAwAgwgEAAA0AIAMdAADxAwAgvgEAAPIDACDCAQAAAQAgAx0AAO8DACC-AQAA8AMAIMIBAAA7ACADHQAA7QMAIL4BAADuAwAgwgEAAAcAIAMdAADrAwAgvgEAAOwDACDCAQAADQAgAAAAAcQBAAAApwECAcQBAAAAqQECBR0AAOADACAeAADpAwAgvgEAAOEDACC_AQAA6AMAIMIBAAABACAFHQAA3gMAIB4AAOYDACC-AQAA3wMAIL8BAADlAwAgwgEAADsAIAUdAADcAwAgHgAA4wMAIL4BAADdAwAgvwEAAOIDACDCAQAABwAgBx0AAKMCACAeAACmAgAgvgEAAKQCACC_AQAApQIAIMABAAAPACDBAQAADwAgwgEAABIAIAsEAACXAgAgCQAAmAIAIAoAAJYCACCMAQEAAAABkgFAAAAAAZ4BAgAAAAGfAQEAAAABoAEBAAAAAaEBAQAAAAGiAQEAAAABpAFAAAAAAQIAAAASACAdAACjAgAgAwAAAA8AIB0AAKMCACAeAACnAgAgDQAAAA8AIAQAAJMCACAJAACUAgAgCgAAkgIAIBYAAKcCACCMAQEAhQIAIZIBQACHAgAhngECAJACACGfAQEAkQIAIaABAQCFAgAhoQEBAIUCACGiAQEAhQIAIaQBQACHAgAhCwQAAJMCACAJAACUAgAgCgAAkgIAIIwBAQCFAgAhkgFAAIcCACGeAQIAkAIAIZ8BAQCRAgAhoAEBAIUCACGhAQEAhQIAIaIBAQCFAgAhpAFAAIcCACEDHQAA4AMAIL4BAADhAwAgwgEAAAEAIAMdAADeAwAgvgEAAN8DACDCAQAAOwAgAx0AANwDACC-AQAA3QMAIMIBAAAHACADHQAAowIAIL4BAACkAgAgwgEAABIAIAAAAAAABcQBCAAAAAHHAQgAAAAByAEIAAAAAckBCAAAAAHKAQgAAAABBR0AANIDACAeAADaAwAgvgEAANMDACC_AQAA2QMAIMIBAAA7ACAFHQAA0AMAIB4AANcDACC-AQAA0QMAIL8BAADWAwAgwgEAAFMAIAsdAADCAgAwHgAAxwIAML4BAADDAgAwvwEAAMQCADDAAQAAxgIAMMEBAADGAgAwwgEAAMYCADDDAQAAxQIAIMQBAADGAgAwxQEAAMgCADDGAQAAyQIAMAsdAAC2AgAwHgAAuwIAML4BAAC3AgAwvwEAALgCADDAAQAAugIAMMEBAAC6AgAwwgEAALoCADDDAQAAuQIAIMQBAAC6AgAwxQEAALwCADDGAQAAvQIAMAsEAACXAgAgCgAAlgIAIAsAAJkCACCMAQEAAAABkgFAAAAAAZ4BAgAAAAGfAQEAAAABoAEBAAAAAaEBAQAAAAGjAQEAAAABpAFAAAAAAQIAAAASACAdAADBAgAgAwAAABIAIB0AAMECACAeAADAAgAgARYAANUDADAQBAAA-QEAIAkAAPoBACAKAADqAQAgCwAA-wEAIIkBAAD4AQAwigEAAA8AEIsBAAD4AQAwjAEBAAAAAZIBQADkAQAhngECAOkBACGfAQEA8wEAIaABAQDjAQAhoQEBAOMBACGiAQEA4wEAIaMBAQAAAAGkAUAA5AEAIQIAAAASACAWAADAAgAgAgAAAL4CACAWAAC_AgAgDIkBAAC9AgAwigEAAL4CABCLAQAAvQIAMIwBAQDjAQAhkgFAAOQBACGeAQIA6QEAIZ8BAQDzAQAhoAEBAOMBACGhAQEA4wEAIaIBAQDjAQAhowEBAOMBACGkAUAA5AEAIQyJAQAAvQIAMIoBAAC-AgAQiwEAAL0CADCMAQEA4wEAIZIBQADkAQAhngECAOkBACGfAQEA8wEAIaABAQDjAQAhoQEBAOMBACGiAQEA4wEAIaMBAQDjAQAhpAFAAOQBACEIjAEBAIUCACGSAUAAhwIAIZ4BAgCQAgAhnwEBAJECACGgAQEAhQIAIaEBAQCFAgAhowEBAIUCACGkAUAAhwIAIQsEAACTAgAgCgAAkgIAIAsAAJUCACCMAQEAhQIAIZIBQACHAgAhngECAJACACGfAQEAkQIAIaABAQCFAgAhoQEBAIUCACGjAQEAhQIAIaQBQACHAgAhCwQAAJcCACAKAACWAgAgCwAAmQIAIIwBAQAAAAGSAUAAAAABngECAAAAAZ8BAQAAAAGgAQEAAAABoQEBAAAAAaMBAQAAAAGkAUAAAAABDAQAAKkCACAIAACoAgAgDAAAqwIAIIwBAQAAAAGSAUAAAAABoAEBAAAAAaEBAQAAAAGkAUAAAAABpQFAAAAAAacBAAAApwECqQEAAACpAQKqAQEAAAABAgAAAA0AIB0AAM0CACADAAAADQAgHQAAzQIAIB4AAMwCACABFgAA1AMAMBEEAAD5AQAgCAAA6gEAIAkAAPoBACAMAAD_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_AQAAzAMAIMIBAAABACALHQAA_wIAMB4AAIMDADC-AQAAgAMAML8BAACBAwAwwAEAANoCADDBAQAA2gIAMMIBAADaAgAwwwEAAIIDACDEAQAA2gIAMMUBAACEAwAwxgEAAN0CADALHQAA9gIAMB4AAPoCADC-AQAA9wIAML8BAAD4AgAwwAEAAMYCADDBAQAAxgIAMMIBAADGAgAwwwEAAPkCACDEAQAAxgIAMMUBAAD7AgAwxgEAAMkCADALHQAA7QIAMB4AAPECADC-AQAA7gIAML8BAADvAgAwwAEAALoCADDBAQAAugIAMMIBAAC6AgAwwwEAAPACACDEAQAAugIAMMUBAADyAgAwxgEAAL0CADALCQAAmAIAIAoAAJYCACALAACZAgAgjAEBAAAAAZIBQAAAAAGeAQIAAAABnwEBAAAAAaABAQAAAAGiAQEAAAABowEBAAAAAaQBQAAAAAECAAAAEgAgHQAA9QIAIAMAAAASACAdAAD1AgAgHgAA9AIAIAEWAADLAwAwAgAAABIAIBYAAPQCACACAAAAvgIAIBYAAPMCACAIjAEBAIUCACGSAUAAhwIAIZ4BAgCQAgAhnwEBAJECACGgAQEAhQIAIaIBAQCFAgAhowEBAIUCACGkAUAAhwIAIQsJAACUAgAgCgAAkgIAIAsAAJUCACCMAQEAhQIAIZIBQACHAgAhngECAJACACGfAQEAkQIAIaABAQCFAgAhogEBAIUCACGjAQEAhQIAIaQBQACHAgAhCwkAAJgCACAKAACWAgAgCwAAmQIAIIwBAQAAAAGSAUAAAAABngECAAAAAZ8BAQAAAAGgAQEAAAABogEBAAAAAaMBAQAAAAGkAUAAAAABDAgAAKgCACAJAACqAgAgDAAAqwIAIIwBAQAAAAGSAUAAAAABoAEBAAAAAaIBAQAAAAGkAUAAAAABpQFAAAAAAacBAAAApwECqQEAAACpAQKqAQEAAAABAgAAAA0AIB0AAP4CACADAAAADQAgHQAA_gIAIB4AAP0CACABFgAAygMAMAIAAAANACAWAAD9AgAgAgAAAMoCACAWAAD8AgAgCYwBAQCFAgAhkgFAAIcCACGgAQEAhQIAIaIBAQCFAgAhpAFAAIcCACGlAUAAhwIAIacBAACdAqcBIqkBAACeAqkBIqoBAQCRAgAhDAgAAJ8CACAJAAChAgAgDAAAogIAIIwBAQCFAgAhkgFAAIcCACGgAQEAhQIAIaIBAQCFAgAhpAFAAIcCACGlAUAAhwIAIacBAACdAqcBIqkBAACeAqkBIqoBAQCRAgAhDAgAAKgCACAJAACqAgAgDAAAqwIAIIwBAQAAAAGSAUAAAAABoAEBAAAAAaIBAQAAAAGkAUAAAAABpQFAAAAAAacBAAAApwECqQEAAACpAQKqAQEAAAABCgcAAM8CACANAADQAgAgDgAA0QIAIIwBAQAAAAGPAQEAAAABkgFAAAAAAaQBQAAAAAGrAQEAAAABrAEBAAAAAa0BCAAAAAECAAAABwAgHQAAhwMAIAMAAAAHACAdAACHAwAgHgAAhgMAIAEWAADJAwAwAgAAAAcAIBYAAIYDACACAAAA3gIAIBYAAIUDACAHjAEBAIUCACGPAQEAhQIAIZIBQACHAgAhpAFAAIcCACGrAQEAhQIAIawBAQCFAgAhrQEIALECACEKBwAAswIAIA0AALQCACAOAAC1AgAgjAEBAIUCACGPAQEAhQIAIZIBQACHAgAhpAFAAIcCACGrAQEAhQIAIawBAQCFAgAhrQEIALECACEKBwAAzwIAIA0AANACACAOAADRAgAgjAEBAAAAAY8BAQAAAAGSAUAAAAABpAFAAAAAAasBAQAAAAGsAQEAAAABrQEIAAAAAQMdAADHAwAgvgEAAMgDACDCAQAAAQAgBB0AAP8CADC-AQAAgAMAMMIBAADaAgAwwwEAAIIDACAEHQAA9gIAML4BAAD3AgAwwgEAAMYCADDDAQAA-QIAIAQdAADtAgAwvgEAAO4CADDCAQAAugIAMMMBAADwAgAgBQwAAI4DACANAACNAwAgDwAAvgMAIBAAAL8DACC6AQAAigIAIAAAAAAAAcQBAAAAuQECBx0AALUDACAeAAC4AwAgvgEAALYDACC_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AAABAgAAADsAIB0AAO8DACAMDQAAuwMAIA8AALoDACAQAAC9AwAgjAEBAAAAAZIBQAAAAAGkAUAAAAABrgEBAAAAAbYBAQAAAAG3AQEAAAABuQEAAAC5AQK6AQEAAAABuwEgAAAAAQIAAAABACAdAADxAwAgAwAAAAsAIB0AAOsDACAeAAD1AwAgDwAAAAsAIAQAAKACACAIAACfAgAgCQAAoQIAIBYAAPUDACCMAQEAhQIAIZIBQACHAgAhoAEBAIUCACGhAQEAhQIAIaIBAQCFAgAhpAFAAIcCACGlAUAAhwIAIacBAACdAqcBIqkBAACeAqkBIqoBAQCRAgAhDQQAAKACACAIAACfAgAgCQAAoQIAIIwBAQCFAgAhkgFAAIcCACGgAQEAhQIAIaEBAQCFAgAhogEBAIUCACGkAUAAhwIAIaUBQACHAgAhpwEAAJ0CpwEiqQEAAJ4CqQEiqgEBAJECACEDAAAABQAgHQAA7QMAIB4AAPgDACANAAAABQAgBAAAsgIAIAcAALMCACANAAC0AgAgFgAA-AMAIIwBAQCFAgAhjwEBAIUCACGSAUAAhwIAIaEBAQCFAgAhpAFAAIcCACGrAQEAhQIAIawBAQCFAgAhrQEIALECACELBAAAsgIAIAcAALMCACANAAC0AgAgjAEBAIUCACGPAQEAhQIAIZIBQACHAgAhoQEBAIUCACGkAUAAhwIAIasBAQCFAgAhrAEBAIUCACGtAQgAsQIAIQMAAAADACAdAADvAwAgHgAA-wMAIA0AAAADACABAADpAgAgBQAA6gIAIA0AAOsCACAWAAD7AwAgjAEBAIUCACGNAQEAhQIAIZIBQACHAgAhpAFAAIcCACGyAQEAhQIAIbMBAQCFAgAhtAEIALECACG1AQIAkAIAIQsBAADpAgAgBQAA6gIAIA0AAOsCACCMAQEAhQIAIY0BAQCFAgAhkgFAAIcCACGkAUAAhwIAIbIBAQCFAgAhswEBAIUCACG0AQgAsQIAIbUBAgCQAgAhAwAAACUAIB0AAPEDACAeAAD-AwAgDgAAACUAIA0AAJQDACAPAACTAwAgEAAAlgMAIBYAAP4DACCMAQEAhQIAIZIBQACHAgAhpAFAAIcCACGuAQEAhQIAIbYBAQCFAgAhtwEBAIUCACG5AQAAkgO5ASK6AQEAkQIAIbsBIACGAgAhDA0AAJQDACAPAACTAwAgEAAAlgMAIIwBAQCFAgAhkgFAAIcCACGkAUAAhwIAIa4BAQCFAgAhtgEBAIUCACG3AQEAhQIAIbkBAACSA7kBIroBAQCRAgAhuwEgAIYCACEMDAAAvAMAIA0AALsDACAPAAC6AwAgjAEBAAAAAZIBQAAAAAGkAUAAAAABrgEBAAAAAbYBAQAAAAG3AQEAAAABuQEAAAC5AQK6AQEAAAABuwEgAAAAAQIAAAABACAdAAD_AwAgAwAAACUAIB0AAP8DACAeAACDBAAgDgAAACUAIAwAAJUDACANAACUAwAgDwAAkwMAIBYAAIMEACCMAQEAhQIAIZIBQACHAgAhpAFAAIcCACGuAQEAhQIAIbYBAQCFAgAhtwEBAIUCACG5AQAAkgO5ASK6AQEAkQIAIbsBIACGAgAhDAwAAJUDACANAACUAwAgDwAAkwMAIIwBAQCFAgAhkgFAAIcCACGkAUAAhwIAIa4BAQCFAgAhtgEBAIUCACG3AQEAhQIAIbkBAACSA7kBIroBAQCRAgAhuwEgAIYCACEFBgALDBwHDRsGDwQCECAKBQEAAQUIAwYACQ0WBg4XBwUEAAIGAAgHAAQNDgYOEwcCBQkDBgAFAQUKAAQEAAIIAAEJAAMMEAcEBAACCQADCgABCwAGAg0UAA4VAAMFGAANGQAOGgABAQABAwwiAA0hABAjAAAAAAMGABAjABEkABIAAAADBgAQIwARJAASAQEAAQEBAAEFBgAXIwAaJAAbNQAYNgAZAAAAAAAFBgAXIwAaJAAbNQAYNgAZAAADBgAgIwAhJAAiAAAAAwYAICMAISQAIgIEAAIHAAQCBAACBwAEBQYAJyMAKiQAKzUAKDYAKQAAAAAABQYAJyMAKiQAKzUAKDYAKQMEAAIIAAEJAAMDBAACCAABCQADAwYAMCMAMSQAMgAAAAMGADAjADEkADIEBAACCQADCgABCwAGBAQAAgkAAwoAAQsABgUGADcjADokADs1ADg2ADkAAAAAAAUGADcjADokADs1ADg2ADkBAQABAQEAAQMGAEAjAEEkAEIAAAADBgBAIwBBJABCEQIBEiQBEycBFCgBFSkBFysBGC0MGS4NGjABGzIMHDMOHzQBIDUBITYMJTkPJjoTJzwCKD0CKT8CKkACK0ECLEMCLUUMLkYUL0gCMEoMMUsVMkwCM00CNE4MN1EWOFIcOVQEOlUEO1gEPFkEPVoEPlwEP14MQF8dQWEEQmMMQ2QeRGUERWYERmcMR2ofSGsjSWwDSm0DS24DTG8DTXADTnIDT3QMUHUkUXcDUnkMU3olVHsDVXwDVn0MV4ABJliBASxZggEGWoMBBluEAQZchQEGXYYBBl6IAQZfigEMYIsBLWGNAQZijwEMY5ABLmSRAQZlkgEGZpMBDGeWAS9olwEzaZgBB2qZAQdrmgEHbJsBB22cAQdungEHb6ABDHChATRxowEHcqUBDHOmATV0pwEHdagBB3apAQx3rAE2eK0BPHmuAQp6rwEKe7ABCnyxAQp9sgEKfrQBCn-2AQyAAbcBPYEBuQEKggG7AQyDAbwBPoQBvQEKhQG-AQqGAb8BDIcBwgE_iAHDAUM"
 };
 async function decodeBase64AsWasm(wasmBase64) {
   const { Buffer: Buffer2 } = await import("buffer");
@@ -66,6 +67,7 @@ __export(prismaNamespace_exports, {
   Decimal: () => Decimal2,
   JsonNull: () => JsonNull2,
   ModelName: () => ModelName,
+  NotificationScalarFieldEnum: () => NotificationScalarFieldEnum,
   NullTypes: () => NullTypes2,
   NullsOrder: () => NullsOrder,
   PrismaClientInitializationError: () => PrismaClientInitializationError2,
@@ -119,7 +121,8 @@ var ModelName = {
   Category: "Category",
   Course: "Course",
   Booking: "Booking",
-  Review: "Review"
+  Review: "Review",
+  Notification: "Notification"
 };
 var TransactionIsolationLevel = runtime2.makeStrictEnum({
   ReadUncommitted: "ReadUncommitted",
@@ -171,6 +174,8 @@ var BookingScalarFieldEnum = {
   courseId: "courseId",
   date: "date",
   status: "status",
+  paymentStatus: "paymentStatus",
+  classroomLink: "classroomLink",
   createdAt: "createdAt",
   updatedAt: "updatedAt"
 };
@@ -184,6 +189,15 @@ var ReviewScalarFieldEnum = {
   bookingId: "bookingId",
   createdAt: "createdAt",
   updatedAt: "updatedAt"
+};
+var NotificationScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  type: "type",
+  title: "title",
+  message: "message",
+  isRead: "isRead",
+  createdAt: "createdAt"
 };
 var SortOrder = {
   asc: "asc",
@@ -217,7 +231,15 @@ function errorHandler(err, req, res, next) {
   let statusCode = 500;
   let message = err.message || "Internal server Error!";
   let errorDetails = err;
-  if (err instanceof ZodError) {
+  if (err.name === "TokenExpiredError") {
+    statusCode = 401;
+    message = "Token has expired. Please login again.";
+    errorDetails = {};
+  } else if (err.name === "JsonWebTokenError") {
+    statusCode = 401;
+    message = "Invalid token. Please login again.";
+    errorDetails = {};
+  } else if (err instanceof ZodError) {
     statusCode = 400;
     message = "Validation Failed";
     errorDetails = err.issues;
@@ -271,18 +293,22 @@ var secret = process.env.JWT_SECRET || "your-secret-key";
 var auth = (...roles) => {
   return async (req, res, next) => {
     try {
-      const token = req.headers.authorization;
-      if (!token) {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
         throw new Error("Token not found!!");
       }
+      const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
       const decoded = jwt.verify(token, secret);
       const userData = await prisma.user.findUnique({
         where: {
-          email: decoded.email
+          id: decoded.id
         }
       });
       if (!userData) {
         throw new Error("Unauthorized!");
+      }
+      if (userData.isBanned) {
+        throw new Error("Your account has been suspended. Contact support.");
       }
       if (roles.length && !roles.includes(decoded.role)) {
         throw new Error("Unauthorized");
@@ -326,95 +352,105 @@ var sendResponse_default = sendResponse;
 // src/modules/admin/admin.service.ts
 var getAllUsers = async () => {
   return prisma.user.findMany({
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      avatar: true,
-      createdAt: true,
-      isBanned: true
-    },
+    select: { id: true, name: true, email: true, role: true, avatar: true, createdAt: true, isBanned: true },
     orderBy: { createdAt: "desc" }
   });
 };
 var updateUserStatus = async (id, isBanned) => {
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) throw new Error("User not found");
-  return prisma.user.update({
-    where: { id },
-    data: { isBanned }
-  });
+  return prisma.user.update({ where: { id }, data: { isBanned } });
+};
+var deleteUser = async (id) => {
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) throw new Error("User not found");
+  if (user.role === "ADMIN") throw new Error("Cannot delete an admin account");
+  return prisma.user.delete({ where: { id } });
 };
 var getAllBookings = async () => {
   return prisma.booking.findMany({
     include: {
       student: { select: { name: true, email: true } },
-      tutor: {
-        include: {
-          user: { select: { name: true, email: true } }
-        }
-      },
+      tutor: { include: { user: { select: { name: true, email: true } } } },
       course: { select: { title: true, price: true } }
     },
     orderBy: { createdAt: "desc" }
   });
 };
+var updateBookingStatus = async (bookingId, status) => {
+  const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
+  if (!booking) throw new Error("Booking not found");
+  return prisma.booking.update({ where: { id: bookingId }, data: { status } });
+};
+var createCategory = async (payload) => {
+  return prisma.category.create({ data: payload });
+};
+var deleteCategory = async (id) => {
+  return prisma.category.delete({ where: { id } });
+};
 var deleteCourse = async (id) => {
   const course = await prisma.course.findUnique({ where: { id } });
   if (!course) throw new Error("Course not found");
-  return prisma.course.delete({
-    where: { id }
-  });
+  return prisma.course.delete({ where: { id } });
 };
-var getSystemStats = async () => {
-  const [totalUsers, totalTutors, totalBookings, totalRevenue] = await Promise.all([
+var getStats = async () => {
+  const [totalUsers, totalTutors, totalStudents, totalCourses, totalBookings, completedBookings, reviewAgg] = await Promise.all([
     prisma.user.count(),
-    prisma.tutor.count(),
+    prisma.user.count({ where: { role: "TUTOR" } }),
+    prisma.user.count({ where: { role: "STUDENT" } }),
+    prisma.course.count(),
     prisma.booking.count(),
-    prisma.course.aggregate({ _sum: { price: true } })
+    prisma.booking.findMany({
+      where: { status: "COMPLETED" },
+      include: { course: { select: { price: true } } }
+    }),
+    prisma.review.aggregate({ _avg: { rating: true }, _count: true })
   ]);
+  const totalRevenue = completedBookings.reduce((sum, b) => sum + (b.course?.price || 0), 0);
   return {
     totalUsers,
     totalTutors,
+    totalStudents,
+    totalCourses,
     totalBookings,
-    totalRevenue: totalRevenue._sum.price || 0
+    totalRevenue: parseFloat(totalRevenue.toFixed(2)),
+    avgRating: parseFloat((reviewAgg._avg.rating || 0).toFixed(1)),
+    totalReviews: reviewAgg._count
   };
 };
 var AdminService = {
   getAllUsers,
   updateUserStatus,
+  deleteUser,
   getAllBookings,
+  updateBookingStatus,
   deleteCourse,
-  getSystemStats
+  getStats,
+  createCategory,
+  deleteCategory
 };
 
 // src/modules/admin/admin.controller.ts
 var getAllUsers2 = async (req, res, next) => {
   try {
     const result = await AdminService.getAllUsers();
-    sendResponse_default(res, {
-      statusCode: 200,
-      success: true,
-      message: "All users retrieved successfully",
-      data: result
-    });
+    sendResponse_default(res, { statusCode: 200, success: true, message: "All users retrieved successfully", data: result });
   } catch (err) {
     next(err);
   }
 };
 var updateUserStatus2 = async (req, res, next) => {
   try {
-    const result = await AdminService.updateUserStatus(
-      req.params.userId,
-      req.body.isBanned
-    );
-    sendResponse_default(res, {
-      statusCode: 200,
-      success: true,
-      message: "User status updated successfully",
-      data: result
-    });
+    const result = await AdminService.updateUserStatus(req.params.userId, req.body.isBanned);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "User status updated successfully", data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+var deleteUser2 = async (req, res, next) => {
+  try {
+    const result = await AdminService.deleteUser(req.params.userId);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "User deleted successfully", data: result });
   } catch (err) {
     next(err);
   }
@@ -422,27 +458,47 @@ var updateUserStatus2 = async (req, res, next) => {
 var getAllBookings2 = async (req, res, next) => {
   try {
     const result = await AdminService.getAllBookings();
-    sendResponse_default(res, {
-      statusCode: 200,
-      success: true,
-      message: "All bookings retrieved successfully",
-      data: result
-    });
+    sendResponse_default(res, { statusCode: 200, success: true, message: "All bookings retrieved successfully", data: result });
   } catch (err) {
     next(err);
   }
 };
 var deleteCourse2 = async (req, res, next) => {
   try {
-    const result = await AdminService.deleteCourse(
-      req.params.courseId
-    );
-    sendResponse_default(res, {
-      statusCode: 200,
-      success: true,
-      message: "Course deleted successfully",
-      data: result
-    });
+    const result = await AdminService.deleteCourse(req.params.courseId);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Course deleted successfully", data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+var getStats2 = async (req, res, next) => {
+  try {
+    const result = await AdminService.getStats();
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Stats retrieved successfully", data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+var updateBookingStatus2 = async (req, res, next) => {
+  try {
+    const result = await AdminService.updateBookingStatus(req.params.bookingId, req.body.status);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Booking status updated", data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+var createCategory2 = async (req, res, next) => {
+  try {
+    const result = await AdminService.createCategory(req.body);
+    sendResponse_default(res, { statusCode: 201, success: true, message: "Category created", data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+var deleteCategory2 = async (req, res, next) => {
+  try {
+    const result = await AdminService.deleteCategory(req.params.categoryId);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Category deleted", data: result });
   } catch (err) {
     next(err);
   }
@@ -450,8 +506,13 @@ var deleteCourse2 = async (req, res, next) => {
 var AdminController = {
   getAllUsers: getAllUsers2,
   updateUserStatus: updateUserStatus2,
+  deleteUser: deleteUser2,
   getAllBookings: getAllBookings2,
-  deleteCourse: deleteCourse2
+  updateBookingStatus: updateBookingStatus2,
+  deleteCourse: deleteCourse2,
+  getStats: getStats2,
+  createCategory: createCategory2,
+  deleteCategory: deleteCategory2
 };
 
 // src/modules/admin/admin.validation.ts
@@ -471,16 +532,23 @@ router.patch(
   validateRequest(updateUserStatusValidation),
   AdminController.updateUserStatus
 );
-router.get("/bookings", auth_middleware_default("ADMIN" /* admin */), AdminController.getAllBookings);
 router.delete(
-  "/courses/:courseId",
+  "/users/:userId",
   auth_middleware_default("ADMIN" /* admin */),
-  AdminController.deleteCourse
+  AdminController.deleteUser
 );
+router.get("/bookings", auth_middleware_default("ADMIN" /* admin */), AdminController.getAllBookings);
+router.patch("/bookings/:bookingId/status", auth_middleware_default("ADMIN" /* admin */), AdminController.updateBookingStatus);
+router.delete("/courses/:courseId", auth_middleware_default("ADMIN" /* admin */), AdminController.deleteCourse);
+router.post("/categories", auth_middleware_default("ADMIN" /* admin */), AdminController.createCategory);
+router.delete("/categories/:categoryId", auth_middleware_default("ADMIN" /* admin */), AdminController.deleteCategory);
+router.get("/stats", auth_middleware_default("ADMIN" /* admin */), AdminController.getStats);
 var AdminRoutes = router;
 
 // src/modules/auth/auth.routes.ts
 import express2 from "express";
+import multer from "multer";
+import path2 from "path";
 
 // src/modules/auth/auth.service.ts
 import bcrypt from "bcryptjs";
@@ -509,114 +577,124 @@ var config_default = config2;
 // src/modules/auth/auth.service.ts
 var createUser = async (payload) => {
   const hashPassword = await bcrypt.hash(payload.password, 8);
-  const result = await prisma.user.create({
-    data: {
-      ...payload,
-      password: hashPassword
-    }
-  });
-  const { password, ...newPassword } = result;
-  return newPassword;
+  const result = await prisma.user.create({ data: { ...payload, password: hashPassword } });
+  const { password, ...safe } = result;
+  return safe;
 };
 var loginUser = async (payload) => {
-  const user = await prisma.user.findUnique({
-    where: {
-      email: payload.email
-    }
-  });
-  if (!user) {
-    throw new Error("User not found");
-  }
-  const isPasswordMatched = await bcrypt.compare(
-    payload.password,
-    user.password
-  );
-  if (!isPasswordMatched) {
-    throw new Error("Invalid credentials!!");
-  }
-  const userData = {
-    id: user.id,
-    name: user.name,
-    role: user.role,
-    email: user.email
-  };
+  const user = await prisma.user.findUnique({ where: { email: payload.email } });
+  if (!user) throw new Error("User not found");
+  const isPasswordMatched = await bcrypt.compare(payload.password, user.password);
+  if (!isPasswordMatched) throw new Error("Invalid credentials!!");
+  if (user.isBanned) throw new Error("Your account has been suspended. Contact support.");
+  const userData = { id: user.id, name: user.name, role: user.role, email: user.email };
   const token = jwt2.sign(userData, config_default.jwt.secret, {
     expiresIn: config_default.jwt.expiresIn
   });
   const { password, ...safeUser } = user;
-  return {
-    token,
-    user: safeUser
-  };
+  return { token, user: safeUser };
 };
 var getMe = async (userId) => {
-  const result = await prisma.user.findUnique({
-    where: {
-      id: userId
-    }
-  });
-  if (!result) {
-    throw new Error("User not found!");
+  const result = await prisma.user.findUnique({ where: { id: userId } });
+  if (!result) throw new Error("User not found!");
+  const { password, ...safe } = result;
+  return safe;
+};
+var updateProfile = async (userId, payload) => {
+  if (payload.email) {
+    const existing = await prisma.user.findFirst({ where: { email: payload.email, NOT: { id: userId } } });
+    if (existing) throw new Error("Email already in use by another account");
   }
-  const { password, ...safeUser } = result;
-  return safeUser;
+  const result = await prisma.user.update({ where: { id: userId }, data: payload });
+  const { password, ...safe } = result;
+  return safe;
+};
+var changePassword = async (userId, payload) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error("User not found");
+  const isMatch = await bcrypt.compare(payload.oldPassword, user.password);
+  if (!isMatch) throw new Error("Old password is incorrect");
+  const hashed = await bcrypt.hash(payload.newPassword, 8);
+  await prisma.user.update({ where: { id: userId }, data: { password: hashed } });
+  return { message: "Password changed successfully" };
+};
+var updateAvatar = async (userId, avatarUrl) => {
+  const result = await prisma.user.update({ where: { id: userId }, data: { avatar: avatarUrl } });
+  const { password, ...safe } = result;
+  return safe;
 };
 var AuthService = {
   createUser,
   loginUser,
-  getMe
+  getMe,
+  updateProfile,
+  changePassword,
+  updateAvatar
 };
 
 // src/modules/auth/auth.controller.ts
 var createUser2 = async (req, res, next) => {
   try {
     const result = await AuthService.createUser(req.body);
-    sendResponse_default(res, {
-      statusCode: 201,
-      success: true,
-      message: "User created",
-      data: result
-    });
-  } catch (error) {
-    next(error);
+    sendResponse_default(res, { statusCode: 201, success: true, message: "User created", data: result });
+  } catch (err) {
+    next(err);
   }
 };
 var loginUser2 = async (req, res, next) => {
   try {
     const result = await AuthService.loginUser(req.body);
     res.cookie("token", result.token, {
-      secure: false,
+      secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       sameSite: "strict"
     });
-    sendResponse_default(res, {
-      statusCode: 201,
-      success: true,
-      message: "User logged in successfully",
-      data: result
-    });
-  } catch (error) {
-    next(error);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "User logged in successfully", data: result });
+  } catch (err) {
+    next(err);
   }
 };
 var getMe2 = async (req, res, next) => {
   try {
-    const { id } = req.user;
-    const result = await AuthService.getMe(id);
-    sendResponse_default(res, {
-      statusCode: 200,
-      success: true,
-      message: "User profile retrieved successfully",
-      data: result
-    });
-  } catch (error) {
-    next(error);
+    const result = await AuthService.getMe(req.user.id);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "User profile retrieved successfully", data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+var updateProfile2 = async (req, res, next) => {
+  try {
+    const result = await AuthService.updateProfile(req.user.id, req.body);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Profile updated successfully", data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+var changePassword2 = async (req, res, next) => {
+  try {
+    const result = await AuthService.changePassword(req.user.id, req.body);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Password changed successfully", data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+var uploadAvatar = async (req, res, next) => {
+  try {
+    if (!req.file) throw new Error("No file uploaded");
+    const avatarUrl = `/uploads/${req.file.filename}`;
+    const result = await AuthService.updateAvatar(req.user.id, avatarUrl);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Avatar updated successfully", data: result });
+  } catch (err) {
+    next(err);
   }
 };
 var AuthController = {
   createUser: createUser2,
   loginUser: loginUser2,
-  getMe: getMe2
+  getMe: getMe2,
+  updateProfile: updateProfile2,
+  changePassword: changePassword2,
+  uploadAvatar
 };
 
 // src/modules/auth/auth.validation.ts
@@ -637,40 +715,56 @@ var loginValidation = z2.object({
 });
 
 // src/modules/auth/auth.routes.ts
-console.log("Auth route loaded");
 var router2 = express2.Router();
-router2.post(
-  "/register",
-  validateRequest(registerValidation),
-  AuthController.createUser
-);
-router2.post(
-  "/login",
-  validateRequest(loginValidation),
-  AuthController.loginUser
-);
+var storage = multer.diskStorage({
+  destination: "uploads/",
+  filename: (_req, file, cb) => {
+    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `${unique}${path2.extname(file.originalname)}`);
+  }
+});
+var upload = multer({
+  storage,
+  limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = /jpeg|jpg|png|webp/;
+    cb(null, allowed.test(path2.extname(file.originalname).toLowerCase()));
+  }
+});
+router2.post("/register", validateRequest(registerValidation), AuthController.createUser);
+router2.post("/login", validateRequest(loginValidation), AuthController.loginUser);
+router2.get("/get-me", auth_middleware_default("ADMIN" /* admin */, "STUDENT" /* student */, "TUTOR" /* tutor */), AuthController.getMe);
+router2.patch("/profile", auth_middleware_default("ADMIN" /* admin */, "STUDENT" /* student */, "TUTOR" /* tutor */), AuthController.updateProfile);
+router2.patch("/password", auth_middleware_default("ADMIN" /* admin */, "STUDENT" /* student */, "TUTOR" /* tutor */), AuthController.changePassword);
+router2.post("/avatar", auth_middleware_default("ADMIN" /* admin */, "STUDENT" /* student */, "TUTOR" /* tutor */), upload.single("avatar"), AuthController.uploadAvatar);
 var AuthRoutes = router2;
-router2.get(
-  "/get-me",
-  auth_middleware_default("ADMIN" /* admin */, "STUDENT" /* student */, "TUTOR" /* tutor */),
-  AuthController.getMe
-);
 
 // src/modules/booking/booking.routes.ts
 import express3 from "express";
 
+// src/lib/notify.ts
+var notify = async (userId, type, title, message) => {
+  await prisma.notification.create({ data: { userId, type, title, message } });
+};
+
 // src/modules/booking/booking.service.ts
 var createBooking = async (studentId, payload) => {
   const course = await prisma.course.findUnique({
-    where: { id: payload.courseId }
+    where: { id: payload.courseId },
+    include: { tutor: { include: { user: true } } }
   });
   if (!course) throw new Error("Course not Found");
-  const tutorProfile = await prisma.tutor.findUnique({
-    where: { id: course.tutorId }
-  });
-  if (tutorProfile?.userId === studentId) {
+  if (course.tutor.userId === studentId)
     throw new Error("You can't book your own course!");
-  }
+  const existingBooking = await prisma.booking.findFirst({
+    where: {
+      studentId,
+      courseId: payload.courseId,
+      status: { in: [BookingStatus.PENDING, BookingStatus.ACCEPTED] }
+    }
+  });
+  if (existingBooking)
+    throw new Error("You already have an active booking for this course!");
   const booking = await prisma.booking.create({
     data: {
       studentId,
@@ -680,55 +774,123 @@ var createBooking = async (studentId, payload) => {
       status: "PENDING"
     }
   });
+  const student = await prisma.user.findUnique({ where: { id: studentId } });
+  await notify(
+    course.tutor.userId,
+    "BOOKING_REQUEST",
+    "New Booking Request",
+    `${student?.name} booked your course "${course.title}"`
+  );
   return booking;
 };
 var getBookingsByStudent = async (studentId) => {
   return await prisma.booking.findMany({
     where: { studentId },
+    include: { course: true, tutor: { include: { user: true } } },
+    orderBy: { createdAt: "desc" }
+  });
+};
+var getCompletedByStudent = async (studentId) => {
+  return await prisma.booking.findMany({
+    where: { studentId, status: BookingStatus.COMPLETED },
     include: {
-      course: true,
-      tutor: { include: { user: true } }
-    }
+      course: { include: { category: true } },
+      tutor: { include: { user: true } },
+      review: true
+    },
+    orderBy: { updatedAt: "desc" }
   });
 };
 var getBookingsByTutor = async (userId) => {
-  const tutorProfile = await prisma.tutor.findUnique({
-    where: { userId }
-  });
+  const tutorProfile = await prisma.tutor.findUnique({ where: { userId } });
   if (!tutorProfile) throw new Error("Tutor profile not found!");
   return await prisma.booking.findMany({
     where: { tutorId: tutorProfile.id },
-    include: { course: true, student: true }
+    include: { course: true, student: true },
+    orderBy: { createdAt: "desc" }
   });
 };
-var updateBookingStatus = async (bookingId, userId, status) => {
+var updateBookingStatus3 = async (bookingId, userId, status) => {
   const tutorProfile = await prisma.tutor.findUnique({ where: { userId } });
   if (!tutorProfile) throw new Error("Tutor not found");
-  const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: { course: true }
+  });
   if (!booking) throw new Error("Booking not found");
   if (booking.tutorId !== tutorProfile.id) throw new Error("Unauthorized");
-  return await prisma.booking.update({
+  const updated = await prisma.booking.update({
     where: { id: bookingId },
     data: { status }
   });
+  const statusMessages = {
+    ACCEPTED: `Your booking for "${booking.course.title}" was accepted!`,
+    REJECTED: `Your booking for "${booking.course.title}" was rejected.`,
+    COMPLETED: `Your session for "${booking.course.title}" is marked complete.`
+  };
+  if (statusMessages[status]) {
+    await notify(
+      booking.studentId,
+      `BOOKING_${status}`,
+      `Booking ${status}`,
+      statusMessages[status]
+    );
+  }
+  return updated;
+};
+var cancelBooking = async (bookingId, studentId) => {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: { course: true, tutor: true }
+  });
+  if (!booking) throw new Error("Booking not found");
+  if (booking.studentId !== studentId) throw new Error("Unauthorized");
+  if (!["PENDING", "ACCEPTED"].includes(booking.status))
+    throw new Error("Only PENDING or ACCEPTED bookings can be cancelled");
+  const updated = await prisma.booking.update({
+    where: { id: bookingId },
+    data: { status: BookingStatus.CANCELLED }
+  });
+  await notify(
+    booking.tutor.userId,
+    "BOOKING_CANCELLED",
+    "Booking Cancelled",
+    `A student cancelled their booking for "${booking.course.title}".`
+  );
+  return updated;
+};
+var generateClassroomLink = async (bookingId, userId) => {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: { tutor: true, course: true }
+  });
+  if (!booking) throw new Error("Booking not found");
+  const isStudent = booking.studentId === userId;
+  const isTutor = booking.tutor.userId === userId;
+  if (!isStudent && !isTutor) throw new Error("Unauthorized");
+  if (!["ACCEPTED", "COMPLETED"].includes(booking.status))
+    throw new Error("Classroom is only available for accepted bookings");
+  if (booking.classroomLink) return { classroomLink: booking.classroomLink };
+  const roomName = `SkillBridge-${booking.course.title.replace(/\s+/g, "-")}-${bookingId.slice(0, 8)}`;
+  const link = `https://meet.jit.si/${encodeURIComponent(roomName)}`;
+  await prisma.booking.update({ where: { id: bookingId }, data: { classroomLink: link } });
+  return { classroomLink: link };
 };
 var BookingService = {
   createBooking,
   getBookingsByStudent,
+  getCompletedByStudent,
   getBookingsByTutor,
-  updateBookingStatus
+  updateBookingStatus: updateBookingStatus3,
+  cancelBooking,
+  generateClassroomLink
 };
 
 // src/modules/booking/booking.controller.ts
 var createBooking2 = async (req, res, next) => {
   try {
     const result = await BookingService.createBooking(req.user.id, req.body);
-    sendResponse_default(res, {
-      statusCode: 201,
-      success: true,
-      message: "Booking created successfully",
-      data: result
-    });
+    sendResponse_default(res, { statusCode: 201, success: true, message: "Booking created successfully", data: result });
   } catch (err) {
     next(err);
   }
@@ -736,12 +898,15 @@ var createBooking2 = async (req, res, next) => {
 var getStudentBookings = async (req, res, next) => {
   try {
     const result = await BookingService.getBookingsByStudent(req.user.id);
-    sendResponse_default(res, {
-      statusCode: 200,
-      success: true,
-      message: "Your bookings fetched successfully",
-      data: result
-    });
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Your bookings fetched successfully", data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+var getCompletedBookings = async (req, res, next) => {
+  try {
+    const result = await BookingService.getCompletedByStudent(req.user.id);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Completed courses fetched", data: result });
   } catch (err) {
     next(err);
   }
@@ -749,29 +914,31 @@ var getStudentBookings = async (req, res, next) => {
 var getTutorBookings = async (req, res, next) => {
   try {
     const result = await BookingService.getBookingsByTutor(req.user.id);
-    sendResponse_default(res, {
-      statusCode: 200,
-      success: true,
-      message: "Tutor bookings fetched successfully",
-      data: result
-    });
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Tutor bookings fetched successfully", data: result });
   } catch (err) {
     next(err);
   }
 };
-var updateBookingStatus2 = async (req, res, next) => {
+var updateBookingStatus4 = async (req, res, next) => {
   try {
-    const result = await BookingService.updateBookingStatus(
-      req.params.id,
-      req.user.id,
-      req.body.status
-    );
-    sendResponse_default(res, {
-      statusCode: 200,
-      success: true,
-      message: "Booking status updated successfully",
-      data: result
-    });
+    const result = await BookingService.updateBookingStatus(req.params.id, req.user.id, req.body.status);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Booking status updated successfully", data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+var cancelBooking2 = async (req, res, next) => {
+  try {
+    const result = await BookingService.cancelBooking(req.params.id, req.user.id);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Booking cancelled successfully", data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+var getClassroomLink = async (req, res, next) => {
+  try {
+    const result = await BookingService.generateClassroomLink(req.params.id, req.user.id);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Classroom link ready", data: result });
   } catch (err) {
     next(err);
   }
@@ -779,8 +946,11 @@ var updateBookingStatus2 = async (req, res, next) => {
 var BookingController = {
   createBooking: createBooking2,
   getStudentBookings,
+  getCompletedBookings,
   getTutorBookings,
-  updateBookingStatus: updateBookingStatus2
+  updateBookingStatus: updateBookingStatus4,
+  cancelBooking: cancelBooking2,
+  getClassroomLink
 };
 
 // src/modules/booking/booking.validation.ts
@@ -788,7 +958,10 @@ import { z as z3 } from "zod";
 var createBookingValidation = z3.object({
   body: z3.object({
     courseId: z3.string(),
-    schedule: z3.string().datetime("Invalid date-time format")
+    schedule: z3.string().datetime("Invalid date-time format").refine(
+      (val) => new Date(val) > /* @__PURE__ */ new Date(),
+      { message: "Session date must be in the future" }
+    )
   })
 });
 var updateBookingStatusValidation = z3.object({
@@ -808,35 +981,20 @@ var updateBookingStatusValidation = z3.object({
 
 // src/modules/booking/booking.routes.ts
 var router3 = express3.Router();
-router3.post(
-  "/",
-  auth_middleware_default("STUDENT" /* student */),
-  validateRequest(createBookingValidation),
-  BookingController.createBooking
-);
-router3.get(
-  "/my-bookings",
-  auth_middleware_default("STUDENT" /* student */),
-  BookingController.getStudentBookings
-);
-router3.get(
-  "/tutor-bookings",
-  auth_middleware_default("TUTOR" /* tutor */),
-  BookingController.getTutorBookings
-);
-router3.patch(
-  "/:id/status",
-  auth_middleware_default("TUTOR" /* tutor */),
-  validateRequest(updateBookingStatusValidation),
-  BookingController.updateBookingStatus
-);
+router3.post("/", auth_middleware_default("STUDENT" /* student */), validateRequest(createBookingValidation), BookingController.createBooking);
+router3.get("/my-bookings", auth_middleware_default("STUDENT" /* student */), BookingController.getStudentBookings);
+router3.get("/completed", auth_middleware_default("STUDENT" /* student */), BookingController.getCompletedBookings);
+router3.patch("/:id/cancel", auth_middleware_default("STUDENT" /* student */), BookingController.cancelBooking);
+router3.get("/tutor-bookings", auth_middleware_default("TUTOR" /* tutor */), BookingController.getTutorBookings);
+router3.patch("/:id/status", auth_middleware_default("TUTOR" /* tutor */), validateRequest(updateBookingStatusValidation), BookingController.updateBookingStatus);
+router3.get("/:id/classroom", auth_middleware_default("STUDENT" /* student */, "TUTOR" /* tutor */), BookingController.getClassroomLink);
 var BookingRoutes = router3;
 
 // src/modules/category/category.routes.ts
 import express4 from "express";
 
 // src/modules/category/category.service.ts
-var createCategory = async (payload) => {
+var createCategory3 = async (payload) => {
   const result = await prisma.category.create({
     data: payload
   });
@@ -857,22 +1015,23 @@ var updateCategory = async (id, payload) => {
   });
   return result;
 };
-var deleteCategory = async (id) => {
+var deleteCategory3 = async (id) => {
   const result = await prisma.category.delete({
     where: {
       id
     }
   });
+  return result;
 };
 var CategoryService = {
-  createCategory,
+  createCategory: createCategory3,
   getAllCategories,
   updateCategory,
-  deleteCategory
+  deleteCategory: deleteCategory3
 };
 
 // src/modules/category/category.controller.ts
-var createCategory2 = async (req, res, next) => {
+var createCategory4 = async (req, res, next) => {
   try {
     const result = await CategoryService.createCategory(req.body);
     sendResponse_default(res, {
@@ -912,7 +1071,7 @@ var updateCategory2 = async (req, res, next) => {
     next(err);
   }
 };
-var deleteCategory2 = async (req, res, next) => {
+var deleteCategory4 = async (req, res, next) => {
   try {
     const id = req.params.id;
     const result = await CategoryService.deleteCategory(id);
@@ -927,10 +1086,10 @@ var deleteCategory2 = async (req, res, next) => {
   }
 };
 var categoryController = {
-  createCategory: createCategory2,
+  createCategory: createCategory4,
   getAllCategories: getAllCategories2,
   updateCategory: updateCategory2,
-  deleteCategory: deleteCategory2
+  deleteCategory: deleteCategory4
 };
 
 // src/modules/category/category.validation.ts
@@ -971,106 +1130,109 @@ var CategoryRoutes = router4;
 import express5 from "express";
 
 // src/modules/course/course.service.ts
+var courseInclude = {
+  tutor: { include: { user: true } },
+  category: true,
+  reviews: { select: { rating: true } }
+};
+var withAvgRating = (course) => {
+  const ratings = course.reviews?.map((r) => r.rating) || [];
+  const avgRating = ratings.length ? parseFloat((ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)) : 0;
+  return { ...course, avgRating, reviewCount: ratings.length };
+};
 var createCourse = async (userId, payload) => {
-  const tutorProfile = await prisma.tutor.findUnique({
-    where: { userId }
-  });
-  if (!tutorProfile) {
-    throw new Error("Tutor profile not found for this user!");
-  }
-  return await prisma.course.create({
-    data: {
-      ...payload,
-      tutorId: tutorProfile.id
-    }
-  });
+  const tutorProfile = await prisma.tutor.findUnique({ where: { userId } });
+  if (!tutorProfile) throw new Error("Tutor profile not found for this user!");
+  return await prisma.course.create({ data: { ...payload, tutorId: tutorProfile.id } });
 };
 var getCourseById = async (id) => {
   const course = await prisma.course.findUnique({
     where: { id },
     include: {
       tutor: { include: { user: true } },
-      category: true
+      category: true,
+      reviews: {
+        include: { Student: { select: { name: true, avatar: true } } },
+        orderBy: { createdAt: "desc" }
+      }
     }
   });
   if (!course) throw new Error("Course not found");
-  return course;
+  return withAvgRating(course);
 };
 var getAllCourses = async (filter) => {
   const where = {};
   if (filter?.tutorId) where.tutorId = filter.tutorId;
   if (filter?.categoryId) where.categoryId = filter.categoryId;
-  return await prisma.course.findMany({
-    where,
-    include: {
-      tutor: { include: { user: true } },
-      category: true
-    }
-  });
+  if (filter?.minPrice || filter?.maxPrice) {
+    where.price = {};
+    if (filter.minPrice) where.price.gte = parseFloat(filter.minPrice);
+    if (filter.maxPrice) where.price.lte = parseFloat(filter.maxPrice);
+  }
+  if (filter?.q) {
+    where.OR = [
+      { title: { contains: filter.q, mode: "insensitive" } },
+      { description: { contains: filter.q, mode: "insensitive" } }
+    ];
+  }
+  const courses = await prisma.course.findMany({ where, include: courseInclude, orderBy: { createdAt: "desc" } });
+  return courses.map(withAvgRating);
 };
 var updateCourse = async (id, userId, payload) => {
   const course = await prisma.course.findUnique({ where: { id } });
   if (!course) throw new Error("Course not found");
-  const tutorProfile = await prisma.tutor.findUnique({
-    where: { userId }
-  });
-  if (!tutorProfile || course.tutorId !== tutorProfile.id) {
+  const tutorProfile = await prisma.tutor.findUnique({ where: { userId } });
+  if (!tutorProfile || course.tutorId !== tutorProfile.id)
     throw new Error("You are not authorized to update this course!");
-  }
-  return await prisma.course.update({
-    where: { id },
-    data: payload
-  });
+  return await prisma.course.update({ where: { id }, data: payload });
 };
 var deleteCourse3 = async (id, userId) => {
-  try {
-    const tutorProfile = await prisma.tutor.findUnique({
-      where: { userId }
-    });
-    if (!tutorProfile) throw new Error("Tutor profile not found!");
-    const course = await prisma.course.findUnique({ where: { id } });
-    if (!course) throw new Error("Course not found");
-    if (course.tutorId !== tutorProfile.id) {
-      throw new Error("You are not authorized to delete this course!");
-    }
-    await prisma.course.delete({ where: { id } });
-    return true;
-  } catch (error) {
-    throw error;
-  }
+  const tutorProfile = await prisma.tutor.findUnique({ where: { userId } });
+  if (!tutorProfile) throw new Error("Tutor profile not found!");
+  const course = await prisma.course.findUnique({ where: { id } });
+  if (!course) throw new Error("Course not found");
+  if (course.tutorId !== tutorProfile.id) throw new Error("You are not authorized to delete this course!");
+  await prisma.course.delete({ where: { id } });
+  return true;
+};
+var getRecommendations = async (studentId) => {
+  const completedBookings = await prisma.booking.findMany({
+    where: { studentId, status: "COMPLETED" },
+    include: { course: { select: { categoryId: true } } }
+  });
+  const bookedCourseIds = await prisma.booking.findMany({ where: { studentId }, select: { courseId: true } }).then((b) => b.map((x) => x.courseId));
+  const categoryIds = [...new Set(completedBookings.map((b) => b.course.categoryId))];
+  const where = { id: { notIn: bookedCourseIds } };
+  if (categoryIds.length) where.categoryId = { in: categoryIds };
+  const courses = await prisma.course.findMany({
+    where,
+    include: courseInclude,
+    take: 6
+  });
+  return courses.map(withAvgRating).sort((a, b) => b.avgRating - a.avgRating);
 };
 var CourseService = {
   createCourse,
   getCourseById,
   getAllCourses,
   updateCourse,
-  deleteCourse: deleteCourse3
+  deleteCourse: deleteCourse3,
+  getRecommendations
 };
 
 // src/modules/course/course.controller.ts
 var createCourse2 = async (req, res, next) => {
   try {
     const result = await CourseService.createCourse(req.user.id, req.body);
-    sendResponse_default(res, {
-      statusCode: 201,
-      success: true,
-      message: "Course created",
-      data: result
-    });
+    sendResponse_default(res, { statusCode: 201, success: true, message: "Course created", data: result });
   } catch (err) {
     next(err);
   }
 };
 var getCourse = async (req, res, next) => {
   try {
-    const id = req.params.id;
-    const result = await CourseService.getCourseById(id);
-    sendResponse_default(res, {
-      statusCode: 201,
-      success: true,
-      message: "Course fetched successfully",
-      data: result
-    });
+    const result = await CourseService.getCourseById(req.params.id);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Course fetched successfully", data: result });
   } catch (err) {
     next(err);
   }
@@ -1078,42 +1240,31 @@ var getCourse = async (req, res, next) => {
 var getAllCourses2 = async (req, res, next) => {
   try {
     const result = await CourseService.getAllCourses(req.query);
-    sendResponse_default(res, {
-      statusCode: 201,
-      success: true,
-      message: "All Courses Fetched Successfully",
-      data: result
-    });
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Courses fetched successfully", data: result });
   } catch (err) {
     next(err);
   }
 };
 var updateCourse2 = async (req, res, next) => {
   try {
-    const id = req.params.id;
-    const result = await CourseService.updateCourse(id, req.user.id, req.body);
-    sendResponse_default(res, {
-      statusCode: 201,
-      success: true,
-      message: "Course Updated successfully",
-      data: result
-    });
+    const result = await CourseService.updateCourse(req.params.id, req.user.id, req.body);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Course updated successfully", data: result });
   } catch (err) {
     next(err);
   }
 };
 var deleteCourse4 = async (req, res, next) => {
   try {
-    const result = await CourseService.deleteCourse(
-      req.params.id,
-      req.user.id
-    );
-    sendResponse_default(res, {
-      statusCode: 201,
-      success: true,
-      message: "Course Deleted Successfully",
-      data: result
-    });
+    await CourseService.deleteCourse(req.params.id, req.user.id);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Course deleted successfully", data: null });
+  } catch (err) {
+    next(err);
+  }
+};
+var getRecommendations2 = async (req, res, next) => {
+  try {
+    const result = await CourseService.getRecommendations(req.user.id);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Recommendations fetched", data: result });
   } catch (err) {
     next(err);
   }
@@ -1123,7 +1274,8 @@ var CourseController = {
   getCourse,
   getAllCourses: getAllCourses2,
   updateCourse: updateCourse2,
-  deleteCourse: deleteCourse4
+  deleteCourse: deleteCourse4,
+  getRecommendations: getRecommendations2
 };
 
 // src/modules/course/course.validation.ts
@@ -1152,23 +1304,183 @@ var updateCourseValidation = z5.object({
 var router5 = express5.Router();
 router5.get("/", CourseController.getAllCourses);
 router5.get("/:id", CourseController.getCourse);
-router5.post(
-  "/",
-  auth_middleware_default("TUTOR" /* tutor */),
-  validateRequest(createCourseValidation),
-  CourseController.createCourse
-);
-router5.put(
-  "/:id",
-  auth_middleware_default("TUTOR" /* tutor */),
-  validateRequest(updateCourseValidation),
-  CourseController.updateCourse
-);
+router5.get("/recommendations/me", auth_middleware_default("STUDENT" /* student */), CourseController.getRecommendations);
+router5.post("/", auth_middleware_default("TUTOR" /* tutor */), validateRequest(createCourseValidation), CourseController.createCourse);
+router5.put("/:id", auth_middleware_default("TUTOR" /* tutor */), validateRequest(updateCourseValidation), CourseController.updateCourse);
 router5.delete("/:id", auth_middleware_default("TUTOR" /* tutor */), CourseController.deleteCourse);
 var CourseRoutes = router5;
 
-// src/modules/review/review.routes.ts
+// src/modules/notification/notification.routes.ts
 import express6 from "express";
+
+// src/modules/notification/notification.service.ts
+var getUserNotifications = async (userId) => {
+  return prisma.notification.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: 50
+  });
+};
+var getUnreadCount = async (userId) => {
+  const count = await prisma.notification.count({ where: { userId, isRead: false } });
+  return { unreadCount: count };
+};
+var markAsRead = async (id, userId) => {
+  const notif = await prisma.notification.findUnique({ where: { id } });
+  if (!notif || notif.userId !== userId) throw new Error("Notification not found");
+  return prisma.notification.update({ where: { id }, data: { isRead: true } });
+};
+var markAllAsRead = async (userId) => {
+  await prisma.notification.updateMany({ where: { userId, isRead: false }, data: { isRead: true } });
+  return { message: "All notifications marked as read" };
+};
+var NotificationService = {
+  getUserNotifications,
+  getUnreadCount,
+  markAsRead,
+  markAllAsRead
+};
+
+// src/modules/notification/notification.controller.ts
+var getAll = async (req, res, next) => {
+  try {
+    const result = await NotificationService.getUserNotifications(req.user.id);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Notifications fetched", data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+var getUnreadCount2 = async (req, res, next) => {
+  try {
+    const result = await NotificationService.getUnreadCount(req.user.id);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Unread count", data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+var markAsRead2 = async (req, res, next) => {
+  try {
+    const result = await NotificationService.markAsRead(req.params.id, req.user.id);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Marked as read", data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+var markAllAsRead2 = async (req, res, next) => {
+  try {
+    const result = await NotificationService.markAllAsRead(req.user.id);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "All marked as read", data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+var NotificationController = { getAll, getUnreadCount: getUnreadCount2, markAsRead: markAsRead2, markAllAsRead: markAllAsRead2 };
+
+// src/modules/notification/notification.routes.ts
+var router6 = express6.Router();
+var allRoles = auth_middleware_default("ADMIN" /* admin */, "STUDENT" /* student */, "TUTOR" /* tutor */);
+router6.get("/", allRoles, NotificationController.getAll);
+router6.get("/unread-count", allRoles, NotificationController.getUnreadCount);
+router6.patch("/read-all", allRoles, NotificationController.markAllAsRead);
+router6.patch("/:id/read", allRoles, NotificationController.markAsRead);
+var NotificationRoutes = router6;
+
+// src/modules/payment/payment.routes.ts
+import express7 from "express";
+
+// src/modules/payment/payment.service.ts
+import Stripe from "stripe";
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error("STRIPE_SECRET_KEY environment variable is not set");
+}
+var stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+var createCheckout = async (bookingId, studentId) => {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: { course: true }
+  });
+  if (!booking) throw new Error("Booking not found");
+  if (booking.studentId !== studentId) throw new Error("Unauthorized");
+  if (booking.paymentStatus === "PAID") throw new Error("This booking is already paid");
+  if (!["PENDING", "ACCEPTED"].includes(booking.status))
+    throw new Error("Only PENDING or ACCEPTED bookings can be paid");
+  const amountInCents = Math.round(booking.course.price * 100);
+  if (amountInCents < 50) throw new Error("Course price is below the minimum chargeable amount ($0.50)");
+  const intent = await stripe.paymentIntents.create({
+    amount: amountInCents,
+    currency: "usd",
+    metadata: {
+      bookingId,
+      studentId,
+      courseTitle: booking.course.title
+    },
+    description: `SkillBridge session: ${booking.course.title}`
+  });
+  return {
+    clientSecret: intent.client_secret,
+    paymentIntentId: intent.id,
+    amount: booking.course.price,
+    currency: "USD",
+    courseTitle: booking.course.title,
+    bookingId
+  };
+};
+var verifyPayment = async (bookingId, paymentIntentId, studentId) => {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: { course: true }
+  });
+  if (!booking) throw new Error("Booking not found");
+  if (booking.studentId !== studentId) throw new Error("Unauthorized");
+  if (booking.paymentStatus === "PAID") return booking;
+  const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
+  if (intent.status !== "succeeded") throw new Error("Payment has not been confirmed by Stripe");
+  if (intent.metadata.bookingId !== bookingId) throw new Error("Payment intent does not match this booking");
+  const updated = await prisma.booking.update({
+    where: { id: bookingId },
+    data: { paymentStatus: "PAID" }
+  });
+  await notify(
+    studentId,
+    "PAYMENT_SUCCESS",
+    "Payment Successful",
+    `Payment confirmed for "${booking.course.title}"`
+  );
+  return updated;
+};
+var PaymentService = { createCheckout, verifyPayment };
+
+// src/modules/payment/payment.controller.ts
+var checkout = async (req, res, next) => {
+  try {
+    const result = await PaymentService.createCheckout(req.body.bookingId, req.user.id);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Payment intent created", data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+var verify = async (req, res, next) => {
+  try {
+    const result = await PaymentService.verifyPayment(
+      req.body.bookingId,
+      req.body.paymentIntentId,
+      req.user.id
+    );
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Payment verified successfully", data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+var PaymentController = { checkout, verify };
+
+// src/modules/payment/payment.routes.ts
+var router7 = express7.Router();
+router7.post("/checkout", auth_middleware_default("STUDENT" /* student */), PaymentController.checkout);
+router7.post("/verify", auth_middleware_default("STUDENT" /* student */), PaymentController.verify);
+var PaymentRoutes = router7;
+
+// src/modules/review/review.routes.ts
+import express8 from "express";
 
 // src/modules/review/review.service.ts
 var createReview = async (studentId, payload) => {
@@ -1225,7 +1537,7 @@ var getReviewsForTutor = async (tutorId) => {
   return await prisma.review.findMany({
     where: { tutorId },
     include: {
-      student: { select: { name: true, avatar: true } },
+      Student: { select: { name: true, avatar: true } },
       course: { select: { title: true } }
     },
     orderBy: { createdAt: "desc" }
@@ -1313,106 +1625,129 @@ var createReviewValidation = z6.object({
 });
 
 // src/modules/review/review.routes.ts
-var router6 = express6.Router();
-router6.post(
+var router8 = express8.Router();
+router8.post(
   "/",
   auth_middleware_default("STUDENT" /* student */),
   validateRequest(createReviewValidation),
   ReviewController.createReview
 );
-router6.get("/", ReviewController.getAllReviews);
-router6.get("/course/:courseId", ReviewController.getReviewsForCourse);
-router6.get("/tutor/:tutorId", ReviewController.getReviewsForTutor);
-var ReviewRoutes = router6;
+router8.get("/", ReviewController.getAllReviews);
+router8.get("/course/:courseId", ReviewController.getReviewsForCourse);
+router8.get("/tutor/:tutorId", ReviewController.getReviewsForTutor);
+var ReviewRoutes = router8;
 
 // src/modules/tutor/tutor.routes.ts
-import express7 from "express";
+import express9 from "express";
 
 // src/modules/tutor/tutor.service.ts
 var createOrUpdateProfile = async (userId, payload) => {
-  if (!userId) {
-    throw new Error("User ID NOT EXISTS!");
-  }
+  if (!userId) throw new Error("User ID NOT EXISTS!");
   const tutorData = {
     bio: payload.bio,
     expertise: payload.expertise,
     hourlyRate: payload.hourlyRate,
     experience: payload.experience
   };
-  const existingProfile = await prisma.tutor.findUnique({
-    where: { userId }
-  });
-  if (existingProfile) {
-    const updated = await prisma.tutor.update({
-      where: { userId },
-      data: tutorData
-    });
-    return updated;
-  }
-  const created = await prisma.tutor.create({
-    data: {
-      userId,
-      ...tutorData
-    }
-  });
-  return created;
+  const existingProfile = await prisma.tutor.findUnique({ where: { userId } });
+  if (existingProfile) return await prisma.tutor.update({ where: { userId }, data: tutorData });
+  return await prisma.tutor.create({ data: { userId, ...tutorData } });
 };
 var getProfileByUserId = async (userId) => {
   const profile = await prisma.tutor.findUnique({
     where: { userId },
     include: {
-      user: true,
-      courses: true,
-      bookings: true,
-      reviews: true
+      user: { select: { id: true, name: true, email: true, avatar: true } },
+      courses: {
+        include: {
+          category: true,
+          reviews: { select: { rating: true } }
+        }
+      },
+      reviews: {
+        include: { Student: { select: { name: true, avatar: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 10
+      }
     }
   });
-  if (!profile) {
-    throw new Error("Tutor profile not fond");
-  }
-  return profile;
+  if (!profile) throw new Error("Tutor profile not found");
+  const coursesWithRating = profile.courses.map((c) => {
+    const ratings = c.reviews.map((r) => r.rating);
+    const avgRating2 = ratings.length ? parseFloat((ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)) : 0;
+    return { ...c, avgRating: avgRating2, reviewCount: ratings.length };
+  });
+  const allRatings = profile.reviews.map((r) => r.rating);
+  const avgRating = allRatings.length ? parseFloat((allRatings.reduce((a, b) => a + b, 0) / allRatings.length).toFixed(1)) : 0;
+  return { ...profile, courses: coursesWithRating, avgRating };
 };
 var getAllTutors = async () => {
-  return await prisma.tutor.findMany({
+  const tutors = await prisma.tutor.findMany({
     include: {
-      user: true,
+      user: { select: { id: true, name: true, email: true, avatar: true } },
       courses: true,
-      reviews: true
+      reviews: { select: { rating: true } }
     }
   });
+  return tutors.map((t) => {
+    const ratings = t.reviews.map((r) => r.rating);
+    const avgRating = ratings.length ? parseFloat((ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)) : 0;
+    return { ...t, avgRating };
+  });
+};
+var getEarnings = async (userId) => {
+  const tutor = await prisma.tutor.findUnique({ where: { userId } });
+  if (!tutor) throw new Error("Tutor profile not found");
+  const completedBookings = await prisma.booking.findMany({
+    where: { tutorId: tutor.id, status: "COMPLETED" },
+    include: { course: { select: { title: true, price: true } } },
+    orderBy: { updatedAt: "desc" }
+  });
+  const total = completedBookings.reduce((sum, b) => sum + (b.course?.price || 0), 0);
+  const byMonth = {};
+  completedBookings.forEach((b) => {
+    const key = b.updatedAt.toISOString().slice(0, 7);
+    byMonth[key] = (byMonth[key] || 0) + (b.course?.price || 0);
+  });
+  const byCourse = {};
+  completedBookings.forEach((b) => {
+    const id = b.courseId;
+    if (!byCourse[id]) byCourse[id] = { title: b.course?.title || "", count: 0, revenue: 0 };
+    byCourse[id].count++;
+    byCourse[id].revenue += b.course?.price || 0;
+  });
+  return {
+    totalEarnings: parseFloat(total.toFixed(2)),
+    totalSessions: completedBookings.length,
+    byMonth,
+    byCourse: Object.values(byCourse),
+    recentSessions: completedBookings.slice(0, 10)
+  };
+};
+var getMyProfile = async (userId) => {
+  return getProfileByUserId(userId);
 };
 var TutorService = {
   createOrUpdateProfile,
   getProfileByUserId,
-  getAllTutors
+  getMyProfile,
+  getAllTutors,
+  getEarnings
 };
 
 // src/modules/tutor/tutor.controller.ts
 var createOrUpdateProfile2 = async (req, res, next) => {
   try {
-    const result = await TutorService.createOrUpdateProfile(
-      req.user.id,
-      req.body
-    );
-    sendResponse_default(res, {
-      statusCode: 201,
-      success: true,
-      message: "tutor created",
-      data: result
-    });
+    const result = await TutorService.createOrUpdateProfile(req.user.id, req.body);
+    sendResponse_default(res, { statusCode: 201, success: true, message: "Tutor profile saved", data: result });
   } catch (err) {
     next(err);
   }
 };
 var getProfileByUserId2 = async (req, res, next) => {
   try {
-    const result = await TutorService.getProfileByUserId(req.user.id);
-    sendResponse_default(res, {
-      statusCode: 201,
-      success: true,
-      message: "tutor profile fetched successfully",
-      data: result
-    });
+    const result = await TutorService.getProfileByUserId(req.params.id);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Tutor profile fetched successfully", data: result });
   } catch (err) {
     next(err);
   }
@@ -1420,12 +1755,23 @@ var getProfileByUserId2 = async (req, res, next) => {
 var getAllTutors2 = async (req, res, next) => {
   try {
     const result = await TutorService.getAllTutors();
-    sendResponse_default(res, {
-      statusCode: 201,
-      success: true,
-      message: "All tutors fetched successfully",
-      data: result
-    });
+    sendResponse_default(res, { statusCode: 200, success: true, message: "All tutors fetched successfully", data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+var getEarnings2 = async (req, res, next) => {
+  try {
+    const result = await TutorService.getEarnings(req.user.id);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Earnings fetched", data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+var getMyProfile2 = async (req, res, next) => {
+  try {
+    const result = await TutorService.getMyProfile(req.user.id);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "My tutor profile fetched", data: result });
   } catch (err) {
     next(err);
   }
@@ -1433,7 +1779,9 @@ var getAllTutors2 = async (req, res, next) => {
 var TutorController = {
   createOrUpdateProfile: createOrUpdateProfile2,
   getProfileByUserId: getProfileByUserId2,
-  getAllTutors: getAllTutors2
+  getMyProfile: getMyProfile2,
+  getAllTutors: getAllTutors2,
+  getEarnings: getEarnings2
 };
 
 // src/modules/tutor/tutor.validation.ts
@@ -1448,59 +1796,38 @@ var createUpdateTutorValidation = z7.object({
 });
 
 // src/modules/tutor/tutor.routes.ts
-var router7 = express7.Router();
-router7.post(
-  "/profile",
-  auth_middleware_default("TUTOR" /* tutor */),
-  validateRequest(createUpdateTutorValidation),
-  TutorController.createOrUpdateProfile
-);
-router7.get("/profile/:id", TutorController.getProfileByUserId);
-router7.get("/", TutorController.getAllTutors);
-var TutorRoutes = router7;
+var router9 = express9.Router();
+router9.post("/profile", auth_middleware_default("TUTOR" /* tutor */), validateRequest(createUpdateTutorValidation), TutorController.createOrUpdateProfile);
+router9.get("/me", auth_middleware_default("TUTOR" /* tutor */), TutorController.getMyProfile);
+router9.get("/earnings", auth_middleware_default("TUTOR" /* tutor */), TutorController.getEarnings);
+router9.get("/profile/:id", TutorController.getProfileByUserId);
+router9.get("/", TutorController.getAllTutors);
+var TutorRoutes = router9;
 
 // src/routes/index.ts
-var router8 = Router();
+var router10 = Router();
 var routerManager = [
-  {
-    path: "/auth",
-    route: AuthRoutes
-  },
-  {
-    path: "/tutors",
-    route: TutorRoutes
-  },
-  {
-    path: "/categories",
-    route: CategoryRoutes
-  },
-  {
-    path: "/courses",
-    route: CourseRoutes
-  },
-  {
-    path: "/bookings",
-    route: BookingRoutes
-  },
-  {
-    path: "/reviews",
-    route: ReviewRoutes
-  },
-  {
-    path: "/admin",
-    route: AdminRoutes
-  }
+  { path: "/auth", route: AuthRoutes },
+  { path: "/tutors", route: TutorRoutes },
+  { path: "/categories", route: CategoryRoutes },
+  { path: "/courses", route: CourseRoutes },
+  { path: "/bookings", route: BookingRoutes },
+  { path: "/reviews", route: ReviewRoutes },
+  { path: "/admin", route: AdminRoutes },
+  { path: "/notifications", route: NotificationRoutes },
+  { path: "/payments", route: PaymentRoutes }
 ];
-routerManager.forEach((r) => router8.use(r.path, r.route));
-var routes_default = router8;
+routerManager.forEach((r) => router10.use(r.path, r.route));
+var routes_default = router10;
 
 // src/app.ts
-var app = express8();
-app.use(express8.json());
-app.use(cors());
+var app = express10();
+app.use(express10.json());
+app.use(cors({ origin: true, credentials: true }));
+app.use("/uploads", express10.static(path3.join(process.cwd(), "uploads")));
 app.use("/api/v1", routes_default);
-app.get("/", (req, res) => {
-  res.send("Hello from Apollo Gears World!");
+app.get("/", (_req, res) => {
+  res.send("SkillBridge API is running!");
 });
 app.use(notFound);
 app.use(errorHandler);
