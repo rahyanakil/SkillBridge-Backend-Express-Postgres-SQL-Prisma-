@@ -1,323 +1,294 @@
 # SkillBridge Backend
 
-Full-Stack Tutoring Platform API  
-(Node.js + Express + PostgreSQL + Prisma)
-
-SkillBridge is a platform that connects students with expert tutors.  
-This backend handles authentication, tutor profiles, bookings, reviews, categories, and admin operations.
+REST API for the SkillBridge tutoring platform — connects students with expert tutors, handles bookings, payments, and role-based access control.
 
 ---
 
-## 🚀 Tech Stack
+## Live URLs
 
-| Technology        | Purpose                  |
-| ----------------- | ------------------------ |
-| Node.js + Express | Backend API              |
-| PostgreSQL        | Database                 |
-| Prisma ORM        | DB modeling + migrations |
-| JWT               | Authentication           |
-| Zod / Validator   | Validation               |
-| Cors + Helmet     | Security                 |
+| Service  | URL                                                               |
+| -------- | ----------------------------------------------------------------- |
+| Backend  | https://vercel.com/rahyanakils-projects/skillbridge-tutor-backend |
+| Frontend | https://skillbridge-frontend-ruby.vercel.app                     |
 
 ---
 
-## 📁 Project Structure
+## Admin Credentials
+
+| Field    | Value             |
+| -------- | ----------------- |
+| Email    | admin@gmail.com   |
+| Password | StrongPassword123 |
+
+> Run `npm run seed:admin` after setting `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env` to create the admin account.
+
+---
+
+## Tech Stack
+
+| Technology       | Version  | Purpose                         |
+| ---------------- | -------- | ------------------------------- |
+| Node.js + Express | ^5.2.1  | HTTP server & routing           |
+| TypeScript       | ^5.9.3   | Type safety                     |
+| Prisma ORM       | ^7.4.1   | Database modeling & migrations  |
+| PostgreSQL       | —        | Relational database             |
+| JWT              | ^9.0.3   | Authentication tokens           |
+| Zod              | ^4.3.6   | Request validation              |
+| Bcrypt           | ^6.0.0   | Password hashing                |
+| Stripe           | ^22.0.2  | Payment processing              |
+| Cloudinary       | ^2.9.0   | Image/avatar uploads            |
+| Multer           | ^1.4.5   | File upload middleware          |
+| Cookie-parser    | ^1.4.7   | Cookie handling                 |
+
+---
+
+## Project Structure
 
 ```
-skillbridge-backend/
-│
+b6a4-backend/
 ├── prisma/
-│   ├── schema.prisma
+│   ├── schema.prisma          # Database schema & enums
 │   └── migrations/
 │
-├── src/
-│   ├── controllers/
-│   ├── middlewares/
-│   ├── routes/
-│   ├── utils/
-│   ├── app.js
-│   └── server.js
+├── generated/prisma/          # Prisma client output
 │
-├── .env
-├── .gitignore
+├── src/
+│   ├── adminSeed/             # Admin user seeder
+│   ├── config/                # Env config (PORT, JWT_SECRET, etc.)
+│   ├── errors/                # Custom error classes
+│   ├── lib/                   # Prisma client instance
+│   ├── middlewares/           # Auth, error, upload middlewares
+│   ├── modules/
+│   │   ├── auth/              # Register, login, get-me
+│   │   ├── tutor/             # Tutor profile management
+│   │   ├── category/          # Course categories (admin-managed)
+│   │   ├── course/            # Course CRUD
+│   │   ├── booking/           # Booking creation & status management
+│   │   ├── review/            # Student reviews
+│   │   ├── payment/           # Stripe payment intents
+│   │   ├── notification/      # In-app notifications
+│   │   └── admin/             # Admin user & booking management
+│   ├── routes/
+│   │   └── index.ts           # Central route aggregator
+│   ├── utils/                 # Helper utilities
+│   ├── app.ts                 # Express app setup
+│   └── server.ts              # Server entry point
+│
+├── prisma.config.ts
+├── vercel.json
+├── tsconfig.json
 └── package.json
 ```
 
 ---
 
-## ⚙️ Environment Variables
+## Environment Variables
 
-Create a `.env` file:
+Create a `.env` file in `b6a4-backend/`:
 
-```
+```env
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
 JWT_SECRET="your-secret-key"
 PORT=5000
+CLOUDINARY_CLOUD_NAME="your-cloud-name"
+CLOUDINARY_API_KEY="your-api-key"
+CLOUDINARY_API_SECRET="your-api-secret"
+STRIPE_SECRET_KEY="sk_test_..."
 ```
 
 ---
 
-## 🛠️ Installation
+## Installation & Setup
 
-### 1️⃣ Clone Repo
-
-```
-git clone https://github.com/rahyanakil/SkillBridge-Backend-Express-Postgres-SQL-Prisma-.git
-cd SkillBridge-Backend-Express-Postgres-SQL-Prisma
-```
-
-### 2️⃣ Install Dependencies
-
-```
+```bash
+# 1. Install dependencies
 npm install
-```
 
-### 3️⃣ Setup Prisma
-
-```
+# 2. Generate Prisma client
 npx prisma generate
+
+# 3. Run migrations
 npx prisma migrate dev --name init
-```
 
-### 4️⃣ Start Server
+# 4. Seed admin user
+npm run seed:admin
 
-```
+# 5. Start development server
 npm run dev
 ```
 
-Server runs at:
+Server runs at `http://localhost:5000`.
 
-```
-http://localhost:5000
-```
+### Available Scripts
 
----
-
-# 👤 User Roles
-
-- Student
-- Tutor
-- Admin (seeded)
-
-Users choose role during registration.
+| Script           | Description                              |
+| ---------------- | ---------------------------------------- |
+| `npm run dev`    | Start dev server with hot reload (tsx)   |
+| `npm run build`  | Build for production (tsup → `/api`)     |
+| `npm run seed:admin` | Seed the default admin user          |
+| `npm run lint`   | Lint TypeScript source files             |
+| `npm run lint:fix` | Auto-fix lint errors                   |
 
 ---
 
-# 🧪 API Base URL
+## API Reference
 
-Local:
+**Base URL:** `/api/v1`
 
-```
-http://localhost:5000/api
-```
+All responses follow this format:
 
-Production example:
-
-```
-https://skillbridge-api.vercel.app/api
-```
-
----
-
-# 📘 API Documentation
-
-## 🔐 Authentication
-
-| Method | Endpoint             | Description              |
-| ------ | -------------------- | ------------------------ |
-| POST   | `/api/auth/register` | Register (student/tutor) |
-| POST   | `/api/auth/login`    | Login                    |
-| GET    | `/api/auth/me`       | Current user             |
-
----
-
-## 🎓 Tutors (Public)
-
-| Method | Endpoint          | Description   |
-| ------ | ----------------- | ------------- |
-| GET    | `/api/tutors`     | All tutors    |
-| GET    | `/api/tutors/:id` | Tutor profile |
-
----
-
-## 📂 Categories
-
-| Method | Endpoint          | Description             |
-| ------ | ----------------- | ----------------------- |
-| GET    | `/api/categories` | List categories         |
-| POST   | `/api/categories` | Create category (admin) |
-
----
-
-## 🧑‍🏫 Tutor Management
-
-| Method | Endpoint                  | Description          |
-| ------ | ------------------------- | -------------------- |
-| PUT    | `/api/tutor/profile`      | Update tutor profile |
-| PUT    | `/api/tutor/availability` | Set availability     |
-
----
-
-## 📅 Bookings
-
-| Method | Endpoint                   | Description     |
-| ------ | -------------------------- | --------------- |
-| POST   | `/api/bookings`            | Create booking  |
-| GET    | `/api/bookings`            | User bookings   |
-| GET    | `/api/bookings/:id`        | Booking details |
-| PATCH  | `/api/bookings/:id/status` | Update status   |
-
----
-
-## ⭐ Reviews
-
-| Method | Endpoint       | Description |
-| ------ | -------------- | ----------- |
-| POST   | `/api/reviews` | Add review  |
-
----
-
-## 🛡️ Admin Routes
-
-| Method | Endpoint               | Description    |
-| ------ | ---------------------- | -------------- |
-| GET    | `/api/admin/users`     | All users      |
-| PATCH  | `/api/admin/users/:id` | Ban/unban user |
-| GET    | `/api/admin/bookings`  | All bookings   |
-| GET    | `/api/admin/stats`     | Analytics      |
-
----
-
-# 🗄️ Database Models (Prisma)
-
-```
-model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      String   // student | tutor | admin
-  isBanned  Boolean  @default(false)
-
-  tutorProfile TutorProfile?
-  bookings     Booking[]
-  reviews      Review[]
-}
-
-model TutorProfile {
-  id          String   @id @default(uuid())
-  userId      String   @unique
-  bio         String?
-  experience  Int?
-  price       Int
-  subjects    String[]
-  availability Json?
-
-  user        User   @relation(fields: [userId], references: [id])
-  reviews     Review[]
-}
-
-model Booking {
-  id          String   @id @default(uuid())
-  studentId   String
-  tutorId     String
-  date        DateTime
-  status      String   // confirmed | completed | cancelled
-
-  student     User @relation("StudentBookings", fields: [studentId], references: [id])
-  tutor       User @relation("TutorBookings", fields: [tutorId], references: [id])
-}
-
-model Category {
-  id       String @id @default(uuid())
-  name     String @unique
-}
-
-model Review {
-  id        String   @id @default(uuid())
-  studentId String
-  tutorId   String
-  rating    Int
-  comment   String
-
-  tutor   TutorProfile @relation(fields: [tutorId], references: [id])
-  student User         @relation(fields: [studentId], references: [id])
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "...",
+  "data": {}
 }
 ```
 
 ---
 
-# 🔐 Seed Admin User
+### Authentication
 
-Create seed script:
-
-```
-npx prisma db seed
-```
-
-Example seed:
-
-```js
-await prisma.user.create({
-  data: {
-    name: "Admin",
-    email: "admin@skillbridge.com",
-    password: hashedPassword,
-    role: "admin",
-  },
-});
-```
+| Method | Endpoint              | Access  | Description           |
+| ------ | --------------------- | ------- | --------------------- |
+| POST   | `/auth/register`      | Public  | Register new user     |
+| POST   | `/auth/login`         | Public  | Login & receive JWT   |
+| GET    | `/auth/get-me`        | Private | Get current user info |
 
 ---
 
-# 🧰 Error Handling
+### Tutors
 
-Includes:
-
-- Global error middleware
-- Validation (Zod / custom)
-- Clean 4xx / 5xx responses
-- Try/catch powered controllers
+| Method | Endpoint               | Access  | Description            |
+| ------ | ---------------------- | ------- | ---------------------- |
+| POST   | `/tutors/profile`      | Tutor   | Create tutor profile   |
+| GET    | `/tutors/profile/:id`  | Public  | Get tutor by ID        |
+| GET    | `/tutors`              | Public  | List all tutors        |
 
 ---
 
-# 🚀 Deployment Steps
+### Categories
 
-## Render Deployment
+| Method | Endpoint            | Access  | Description           |
+| ------ | ------------------- | ------- | --------------------- |
+| GET    | `/categories`       | Public  | List all categories   |
+| POST   | `/categories`       | Admin   | Create category       |
+| PUT    | `/categories/:id`   | Admin   | Update category       |
+| DELETE | `/categories/:id`   | Admin   | Delete category       |
 
-1. Create Web Service
-2. Connect GitHub Repo
-3. Add Environment Variables
-4. Start Command:
+---
 
+### Courses
+
+| Method | Endpoint         | Access  | Description           |
+| ------ | ---------------- | ------- | --------------------- |
+| GET    | `/courses`       | Public  | List all courses      |
+| GET    | `/courses/:id`   | Public  | Get course by ID      |
+| POST   | `/courses`       | Tutor   | Create course         |
+| PUT    | `/courses/:id`   | Tutor   | Update course         |
+| DELETE | `/courses/:id`   | Tutor   | Delete course         |
+
+---
+
+### Bookings
+
+| Method | Endpoint                    | Access   | Description                      |
+| ------ | --------------------------- | -------- | -------------------------------- |
+| POST   | `/bookings`                 | Student  | Create booking                   |
+| GET    | `/bookings/my-bookings`     | Student  | Get student's own bookings       |
+| GET    | `/bookings/tutor-bookings`  | Tutor    | Get tutor's incoming bookings    |
+| PATCH  | `/bookings/:id/status`      | Tutor    | Accept / reject / complete       |
+
+---
+
+### Reviews
+
+| Method | Endpoint                    | Access   | Description              |
+| ------ | --------------------------- | -------- | ------------------------ |
+| POST   | `/reviews`                  | Student  | Submit review            |
+| GET    | `/reviews`                  | Public   | All reviews              |
+| GET    | `/reviews/course/:courseId` | Public   | Reviews for a course     |
+| GET    | `/reviews/tutor/:tutorId`   | Public   | Reviews for a tutor      |
+
+---
+
+### Payments (Stripe)
+
+| Method | Endpoint                           | Access   | Description                      |
+| ------ | ---------------------------------- | -------- | -------------------------------- |
+| POST   | `/payments/create-payment-intent`  | Student  | Create Stripe PaymentIntent      |
+| POST   | `/payments/confirm`                | Student  | Confirm payment & update booking |
+
+---
+
+### Notifications
+
+| Method | Endpoint                       | Access   | Description              |
+| ------ | ------------------------------ | -------- | ------------------------ |
+| GET    | `/notifications`               | Private  | Get user notifications   |
+| PATCH  | `/notifications/:id/read`      | Private  | Mark notification read   |
+
+---
+
+### Admin
+
+| Method | Endpoint                      | Access  | Description              |
+| ------ | ----------------------------- | ------- | ------------------------ |
+| GET    | `/admin/users`                | Admin   | List all users           |
+| PATCH  | `/admin/users/:userId`        | Admin   | Ban or unban a user      |
+| GET    | `/admin/bookings`             | Admin   | List all bookings        |
+| DELETE | `/admin/courses/:courseId`    | Admin   | Remove any course        |
+
+---
+
+## Database Models
+
+### Enums
+
+```prisma
+enum Role          { STUDENT  TUTOR  ADMIN }
+enum BookingStatus { PENDING  ACCEPTED  REJECTED  COMPLETED  CANCELLED }
+enum PaymentStatus { UNPAID  PAID  REFUNDED }
 ```
-npm start
-```
 
-### Prisma Deployment:
+### Models
 
-```
+| Model        | Key Fields                                                              |
+| ------------ | ----------------------------------------------------------------------- |
+| User         | id, name, email, password, role, avatar, isBanned                       |
+| Tutor        | id, userId (FK), bio, expertise, hourlyRate, experience                 |
+| Category     | id, name (unique)                                                       |
+| Course       | id, tutorId, categoryId, title, description, price                      |
+| Booking      | id, studentId, tutorId, courseId, date, status, paymentStatus, classroomLink |
+| Review       | id, rating, comment, studentId, tutorId, courseId, bookingId (unique)  |
+| Notification | id, userId, type, title, message, isRead                                |
+
+---
+
+## Authentication Flow
+
+- JWT is generated on login and sent as an **httpOnly cookie**
+- Frontend sends the raw token (no `Bearer` prefix) in the `Authorization` header
+- `auth.middleware.ts` verifies the token and attaches `req.user`
+- Role-based guards (`requireRole`) protect tutor, student, and admin routes
+
+---
+
+## Deployment
+
+Deployed to **Vercel** using `vercel.json` with the built output in `/api`.
+
+```bash
+# Build for production
+npm run build
+
+# Apply migrations on production DB
 npx prisma migrate deploy
 ```
 
 ---
 
-# 🧾 Required for Assignment Submission
+## License
 
-```
-Frontend Repo:
-Backend Repo:
-Frontend Live URL:
-Backend Live URL:
-Demo Video:
-Admin Email:
-Admin Password:
-```
-
----
-
-# 📄 License
-
-MIT License – for educational use.
-
----
+MIT — for educational use.
