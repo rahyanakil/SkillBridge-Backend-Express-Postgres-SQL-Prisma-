@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { prisma } from "../lib/prisma";
 
-const secret = process.env.JWT_SECRET || "your-secret-key";
+const secret = process.env.JWT_SECRET!;
 
 export enum UserRole {
   admin = "ADMIN",
