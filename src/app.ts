@@ -8,7 +8,16 @@ import router from "./routes";
 const app: Application = express();
 
 app.use(express.json());
-app.use(cors({ origin: true, credentials: true }));
+
+const allowedOrigins =
+  process.env.NODE_ENV === "production"
+    ? [
+        "https://skillbridge-frontend-ruby.vercel.app",
+        process.env.APP_URL,
+      ].filter(Boolean)
+    : true;
+
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 
 // Serve uploaded avatars as static files
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
