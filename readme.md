@@ -201,13 +201,14 @@ All responses follow this format:
 
 ### Courses
 
-| Method | Endpoint         | Access  | Description           |
-| ------ | ---------------- | ------- | --------------------- |
-| GET    | `/courses`       | Public  | List all courses      |
-| GET    | `/courses/:id`   | Public  | Get course by ID      |
-| POST   | `/courses`       | Tutor   | Create course         |
-| PUT    | `/courses/:id`   | Tutor   | Update course         |
-| DELETE | `/courses/:id`   | Tutor   | Delete course         |
+| Method | Endpoint                          | Access   | Description                         |
+| ------ | --------------------------------- | -------- | ----------------------------------- |
+| GET    | `/courses`                        | Public   | List all courses (search & filter)  |
+| GET    | `/courses/:id`                    | Public   | Get course by ID with reviews       |
+| POST   | `/courses`                        | Tutor    | Create course                       |
+| PUT    | `/courses/:id`                    | Tutor    | Update course (ownership checked)   |
+| DELETE | `/courses/:id`                    | Tutor    | Delete course (ownership checked)   |
+| GET    | `/courses/recommendations/me`     | Student  | Get personalized course recommendations |
 
 ---
 
