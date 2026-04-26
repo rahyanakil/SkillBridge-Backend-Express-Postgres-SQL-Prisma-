@@ -150,11 +150,14 @@ All responses follow this format:
 
 ### Authentication
 
-| Method | Endpoint              | Access  | Description           |
-| ------ | --------------------- | ------- | --------------------- |
-| POST   | `/auth/register`      | Public  | Register new user     |
-| POST   | `/auth/login`         | Public  | Login & receive JWT   |
-| GET    | `/auth/get-me`        | Private | Get current user info |
+| Method | Endpoint              | Access  | Description                      |
+| ------ | --------------------- | ------- | -------------------------------- |
+| POST   | `/auth/register`      | Public  | Register new user                |
+| POST   | `/auth/login`         | Public  | Login & receive JWT cookie       |
+| GET    | `/auth/get-me`        | Private | Get current user info            |
+| PATCH  | `/auth/profile`       | Private | Update name / bio / email        |
+| PATCH  | `/auth/password`      | Private | Change password (requires old)   |
+| POST   | `/auth/avatar`        | Private | Upload avatar to Cloudinary      |
 
 ---
 
