@@ -87,13 +87,30 @@ b6a4-backend/
 Create a `.env` file in `b6a4-backend/`:
 
 ```env
-DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
-JWT_SECRET="your-secret-key"
+# Server
 PORT=5000
+APP_URL="http://localhost:5000"
+
+# Database (PostgreSQL / Neon)
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
+
+# Auth
+JWT_SECRET="your-super-secret-key"
+JWT_EXPIRES_IN="7d"
+
+# Admin seed credentials
+ADMIN_EMAIL="admin@gmail.com"
+ADMIN_PASSWORD="StrongPassword123"
+
+# Cloudinary
 CLOUDINARY_CLOUD_NAME="your-cloud-name"
 CLOUDINARY_API_KEY="your-api-key"
 CLOUDINARY_API_SECRET="your-api-secret"
+
+# Stripe
 STRIPE_SECRET_KEY="sk_test_..."
+STRIPE_PUBLISHABLE_KEY="pk_test_..."
+STRIPE_RESTRICTED_KEY="rk_test_..."
 ```
 
 ---
