@@ -196,12 +196,15 @@ All responses follow this format:
 
 ### Bookings
 
-| Method | Endpoint                    | Access   | Description                      |
-| ------ | --------------------------- | -------- | -------------------------------- |
-| POST   | `/bookings`                 | Student  | Create booking                   |
-| GET    | `/bookings/my-bookings`     | Student  | Get student's own bookings       |
-| GET    | `/bookings/tutor-bookings`  | Tutor    | Get tutor's incoming bookings    |
-| PATCH  | `/bookings/:id/status`      | Tutor    | Accept / reject / complete       |
+| Method | Endpoint                    | Access   | Description                           |
+| ------ | --------------------------- | -------- | ------------------------------------- |
+| POST   | `/bookings`                 | Student  | Create booking (status: PENDING)      |
+| GET    | `/bookings/my-bookings`     | Student  | Get student's own bookings            |
+| GET    | `/bookings/completed`       | Student  | Get student's completed courses       |
+| PATCH  | `/bookings/:id/cancel`      | Student  | Cancel a pending booking              |
+| GET    | `/bookings/tutor-bookings`  | Tutor    | Get tutor's incoming bookings         |
+| PATCH  | `/bookings/:id/status`      | Tutor    | Accept / reject / complete booking    |
+| GET    | `/bookings/:id/classroom`   | Both     | Get classroom link for booking        |
 
 ---
 
