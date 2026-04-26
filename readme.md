@@ -312,6 +312,25 @@ npx prisma migrate deploy
 
 ---
 
+## Test Accounts
+
+Seed the admin with `npm run seed:admin`, then register additional accounts via the frontend.
+
+| Role    | How to Create                              |
+| ------- | ------------------------------------------ |
+| Admin   | Seeded via `npm run seed:admin`            |
+| Tutor   | Register → role auto-assigned as STUDENT → manually change in DB, or register with role TUTOR if exposed |
+| Student | Register via `/auth/register` (default role) |
+
+**Default admin credentials after seed:**
+
+| Field    | Value             |
+| -------- | ----------------- |
+| Email    | admin@gmail.com   |
+| Password | StrongPassword123 |
+
+---
+
 ## License
 
 MIT — for educational use.
