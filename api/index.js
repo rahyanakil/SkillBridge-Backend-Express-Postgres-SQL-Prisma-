@@ -6,7 +6,7 @@ var __export = (target, all) => {
 
 // src/app.ts
 import cors from "cors";
-import express10 from "express";
+import express11 from "express";
 import path3 from "path";
 
 // src/middlewares/globalErrorHandler.ts
@@ -289,7 +289,7 @@ var adapter = new PrismaPg({ connectionString });
 var prisma = new PrismaClient({ adapter });
 
 // src/middlewares/auth.middleware.ts
-var secret = process.env.JWT_SECRET || "your-secret-key";
+var secret = process.env.JWT_SECRET;
 var auth = (...roles) => {
   return async (req, res, next) => {
     try {
@@ -350,10 +350,15 @@ var sendResponse = (res, data) => {
 var sendResponse_default = sendResponse;
 
 // src/modules/admin/admin.service.ts
-var getAllUsers = async () => {
+var getAllUsers = async (filter) => {
+  const limit = filter?.limit ? parseInt(filter.limit) : void 0;
+  const page = filter?.page ? Math.max(1, parseInt(filter.page)) : 1;
+  const skip = limit ? (page - 1) * limit : void 0;
   return prisma.user.findMany({
     select: { id: true, name: true, email: true, role: true, avatar: true, createdAt: true, isBanned: true },
-    orderBy: { createdAt: "desc" }
+    orderBy: { createdAt: "desc" },
+    ...limit && { take: limit },
+    ...skip !== void 0 && { skip }
   });
 };
 var updateUserStatus = async (id, isBanned) => {
@@ -367,14 +372,19 @@ var deleteUser = async (id) => {
   if (user.role === "ADMIN") throw new Error("Cannot delete an admin account");
   return prisma.user.delete({ where: { id } });
 };
-var getAllBookings = async () => {
+var getAllBookings = async (filter) => {
+  const limit = filter?.limit ? parseInt(filter.limit) : void 0;
+  const page = filter?.page ? Math.max(1, parseInt(filter.page)) : 1;
+  const skip = limit ? (page - 1) * limit : void 0;
   return prisma.booking.findMany({
     include: {
       student: { select: { name: true, email: true } },
       tutor: { include: { user: { select: { name: true, email: true } } } },
       course: { select: { title: true, price: true } }
     },
-    orderBy: { createdAt: "desc" }
+    orderBy: { createdAt: "desc" },
+    ...limit && { take: limit },
+    ...skip !== void 0 && { skip }
   });
 };
 var updateBookingStatus = async (bookingId, status) => {
@@ -433,7 +443,7 @@ var AdminService = {
 // src/modules/admin/admin.controller.ts
 var getAllUsers2 = async (req, res, next) => {
   try {
-    const result = await AdminService.getAllUsers();
+    const result = await AdminService.getAllUsers(req.query);
     sendResponse_default(res, { statusCode: 200, success: true, message: "All users retrieved successfully", data: result });
   } catch (err) {
     next(err);
@@ -457,7 +467,7 @@ var deleteUser2 = async (req, res, next) => {
 };
 var getAllBookings2 = async (req, res, next) => {
   try {
-    const result = await AdminService.getAllBookings();
+    const result = await AdminService.getAllBookings(req.query);
     sendResponse_default(res, { statusCode: 200, success: true, message: "All bookings retrieved successfully", data: result });
   } catch (err) {
     next(err);
@@ -545,8 +555,78 @@ router.delete("/categories/:categoryId", auth_middleware_default("ADMIN" /* admi
 router.get("/stats", auth_middleware_default("ADMIN" /* admin */), AdminController.getStats);
 var AdminRoutes = router;
 
-// src/modules/auth/auth.routes.ts
+// src/modules/ai/ai.routes.ts
 import express2 from "express";
+
+// src/modules/ai/ai.service.ts
+import { GoogleGenerativeAI } from "@google/generative-ai";
+var SYSTEM_INSTRUCTION = "You are a professional tutor on SkillBridge. Guide students step-by-step with Markdown formatting.";
+var _client = null;
+var getClient = () => {
+  if (_client) return _client;
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) throw new Error("GEMINI_API_KEY is not set in environment variables.");
+  _client = new GoogleGenerativeAI(key);
+  return _client;
+};
+var isRateLimitError = (err) => typeof err?.message === "string" && (err.message.includes("429") || err.message.toLowerCase().includes("quota"));
+var askAI = async (prompt) => {
+  try {
+    const model = getClient().getGenerativeModel({
+      model: "gemini-2.0-flash-lite",
+      systemInstruction: SYSTEM_INSTRUCTION
+    });
+    const result = await model.generateContent(prompt);
+    return result.response.text();
+  } catch (err) {
+    if (isRateLimitError(err)) {
+      throw new Error(
+        "AI_RATE_LIMIT: The AI is currently at capacity. Please wait a moment before trying again."
+      );
+    }
+    throw err;
+  }
+};
+var AIService = { askAI };
+
+// src/modules/ai/ai.controller.ts
+var askAI2 = async (req, res, next) => {
+  try {
+    const reply = await AIService.askAI(req.body.prompt);
+    sendResponse_default(res, { statusCode: 200, success: true, message: "AI response generated", data: { reply } });
+  } catch (err) {
+    if (typeof err?.message === "string" && err.message.startsWith("AI_RATE_LIMIT:")) {
+      return sendResponse_default(res, {
+        statusCode: 429,
+        success: false,
+        message: err.message.replace("AI_RATE_LIMIT: ", "")
+      });
+    }
+    next(err);
+  }
+};
+var AIController = { askAI: askAI2 };
+
+// src/modules/ai/ai.validation.ts
+import { z as z2 } from "zod";
+var askAIValidation = z2.object({
+  body: z2.object({
+    prompt: z2.string().min(1, "Prompt cannot be empty")
+  })
+});
+
+// src/modules/ai/ai.routes.ts
+var router2 = express2.Router();
+router2.post(
+  "/ask",
+  auth_middleware_default("STUDENT" /* student */, "TUTOR" /* tutor */, "ADMIN" /* admin */),
+  validateRequest(askAIValidation),
+  AIController.askAI
+);
+var AIRoutes = router2;
+
+// src/modules/auth/auth.routes.ts
+import express3 from "express";
 import multer from "multer";
 import path2 from "path";
 
@@ -640,13 +720,40 @@ var updateAvatar = async (userId, avatarUrl) => {
   const { password, ...safe } = result;
   return safe;
 };
+var googleAuth = async (payload) => {
+  let user = await prisma.user.findUnique({ where: { email: payload.email } });
+  if (!user) {
+    const randomPassword = await bcrypt.hash(Math.random().toString(36) + Date.now(), 8);
+    user = await prisma.user.create({
+      data: {
+        email: payload.email,
+        name: payload.name,
+        avatar: payload.avatar ?? null,
+        password: randomPassword,
+        role: "STUDENT"
+      }
+    });
+  }
+  if (user.isBanned) throw new Error("Your account has been suspended. Contact support.");
+  const userData = { id: user.id, name: user.name, role: user.role, email: user.email };
+  const token = jwt2.sign(userData, config_default.jwt.secret, {
+    expiresIn: config_default.jwt.expiresIn
+  });
+  const { password, ...safeUser } = user;
+  return { token, user: safeUser };
+};
+var githubAuth = async (payload) => {
+  return googleAuth(payload);
+};
 var AuthService = {
   createUser,
   loginUser,
   getMe,
   updateProfile,
   changePassword,
-  updateAvatar
+  updateAvatar,
+  googleAuth,
+  githubAuth
 };
 
 // src/modules/auth/auth.controller.ts
@@ -705,34 +812,62 @@ var uploadAvatar = async (req, res, next) => {
     next(err);
   }
 };
+var googleAuth2 = async (req, res, next) => {
+  try {
+    const result = await AuthService.googleAuth(req.body);
+    res.cookie("token", result.token, {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "strict"
+    });
+    sendResponse_default(res, { statusCode: 200, success: true, message: "Google login successful", data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+var githubAuth2 = async (req, res, next) => {
+  try {
+    const result = await AuthService.githubAuth(req.body);
+    res.cookie("token", result.token, {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "strict"
+    });
+    sendResponse_default(res, { statusCode: 200, success: true, message: "GitHub login successful", data: result });
+  } catch (err) {
+    next(err);
+  }
+};
 var AuthController = {
   createUser: createUser2,
   loginUser: loginUser2,
   getMe: getMe2,
   updateProfile: updateProfile2,
   changePassword: changePassword2,
-  uploadAvatar
+  uploadAvatar,
+  googleAuth: googleAuth2,
+  githubAuth: githubAuth2
 };
 
 // src/modules/auth/auth.validation.ts
-import { z as z2 } from "zod";
-var registerValidation = z2.object({
-  body: z2.object({
-    name: z2.string().min(2),
-    email: z2.email(),
-    password: z2.string().min(6),
-    role: z2.enum(["STUDENT", "TUTOR", "ADMIN"]).optional()
+import { z as z3 } from "zod";
+var registerValidation = z3.object({
+  body: z3.object({
+    name: z3.string().min(2),
+    email: z3.email(),
+    password: z3.string().min(6),
+    role: z3.enum(["STUDENT", "TUTOR", "ADMIN"]).optional()
   })
 });
-var loginValidation = z2.object({
-  body: z2.object({
-    email: z2.email(),
-    password: z2.string().min(6)
+var loginValidation = z3.object({
+  body: z3.object({
+    email: z3.email(),
+    password: z3.string().min(6)
   })
 });
 
 // src/modules/auth/auth.routes.ts
-var router2 = express2.Router();
+var router3 = express3.Router();
 var upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 2 * 1024 * 1024 },
@@ -741,16 +876,18 @@ var upload = multer({
     cb(null, allowed.test(path2.extname(file.originalname).toLowerCase()));
   }
 });
-router2.post("/register", validateRequest(registerValidation), AuthController.createUser);
-router2.post("/login", validateRequest(loginValidation), AuthController.loginUser);
-router2.get("/get-me", auth_middleware_default("ADMIN" /* admin */, "STUDENT" /* student */, "TUTOR" /* tutor */), AuthController.getMe);
-router2.patch("/profile", auth_middleware_default("ADMIN" /* admin */, "STUDENT" /* student */, "TUTOR" /* tutor */), AuthController.updateProfile);
-router2.patch("/password", auth_middleware_default("ADMIN" /* admin */, "STUDENT" /* student */, "TUTOR" /* tutor */), AuthController.changePassword);
-router2.post("/avatar", auth_middleware_default("ADMIN" /* admin */, "STUDENT" /* student */, "TUTOR" /* tutor */), upload.single("avatar"), AuthController.uploadAvatar);
-var AuthRoutes = router2;
+router3.post("/register", validateRequest(registerValidation), AuthController.createUser);
+router3.post("/login", validateRequest(loginValidation), AuthController.loginUser);
+router3.post("/google", AuthController.googleAuth);
+router3.post("/github", AuthController.githubAuth);
+router3.get("/get-me", auth_middleware_default("ADMIN" /* admin */, "STUDENT" /* student */, "TUTOR" /* tutor */), AuthController.getMe);
+router3.patch("/profile", auth_middleware_default("ADMIN" /* admin */, "STUDENT" /* student */, "TUTOR" /* tutor */), AuthController.updateProfile);
+router3.patch("/password", auth_middleware_default("ADMIN" /* admin */, "STUDENT" /* student */, "TUTOR" /* tutor */), AuthController.changePassword);
+router3.post("/avatar", auth_middleware_default("ADMIN" /* admin */, "STUDENT" /* student */, "TUTOR" /* tutor */), upload.single("avatar"), AuthController.uploadAvatar);
+var AuthRoutes = router3;
 
 // src/modules/booking/booking.routes.ts
-import express3 from "express";
+import express4 from "express";
 
 // src/lib/notify.ts
 var notify = async (userId, type, title, message) => {
@@ -964,19 +1101,19 @@ var BookingController = {
 };
 
 // src/modules/booking/booking.validation.ts
-import { z as z3 } from "zod";
-var createBookingValidation = z3.object({
-  body: z3.object({
-    courseId: z3.string(),
-    schedule: z3.string().datetime("Invalid date-time format").refine(
+import { z as z4 } from "zod";
+var createBookingValidation = z4.object({
+  body: z4.object({
+    courseId: z4.string(),
+    schedule: z4.string().datetime("Invalid date-time format").refine(
       (val) => new Date(val) > /* @__PURE__ */ new Date(),
       { message: "Session date must be in the future" }
     )
   })
 });
-var updateBookingStatusValidation = z3.object({
-  body: z3.object({
-    status: z3.enum([
+var updateBookingStatusValidation = z4.object({
+  body: z4.object({
+    status: z4.enum([
       "PENDING",
       "ACCEPTED",
       "REJECTED",
@@ -984,24 +1121,24 @@ var updateBookingStatusValidation = z3.object({
       "CANCELLED"
     ])
   }),
-  params: z3.object({
-    id: z3.string()
+  params: z4.object({
+    id: z4.string()
   })
 });
 
 // src/modules/booking/booking.routes.ts
-var router3 = express3.Router();
-router3.post("/", auth_middleware_default("STUDENT" /* student */), validateRequest(createBookingValidation), BookingController.createBooking);
-router3.get("/my-bookings", auth_middleware_default("STUDENT" /* student */), BookingController.getStudentBookings);
-router3.get("/completed", auth_middleware_default("STUDENT" /* student */), BookingController.getCompletedBookings);
-router3.patch("/:id/cancel", auth_middleware_default("STUDENT" /* student */), BookingController.cancelBooking);
-router3.get("/tutor-bookings", auth_middleware_default("TUTOR" /* tutor */), BookingController.getTutorBookings);
-router3.patch("/:id/status", auth_middleware_default("TUTOR" /* tutor */), validateRequest(updateBookingStatusValidation), BookingController.updateBookingStatus);
-router3.get("/:id/classroom", auth_middleware_default("STUDENT" /* student */, "TUTOR" /* tutor */), BookingController.getClassroomLink);
-var BookingRoutes = router3;
+var router4 = express4.Router();
+router4.post("/", auth_middleware_default("STUDENT" /* student */), validateRequest(createBookingValidation), BookingController.createBooking);
+router4.get("/my-bookings", auth_middleware_default("STUDENT" /* student */), BookingController.getStudentBookings);
+router4.get("/completed", auth_middleware_default("STUDENT" /* student */), BookingController.getCompletedBookings);
+router4.patch("/:id/cancel", auth_middleware_default("STUDENT" /* student */), BookingController.cancelBooking);
+router4.get("/tutor-bookings", auth_middleware_default("TUTOR" /* tutor */), BookingController.getTutorBookings);
+router4.patch("/:id/status", auth_middleware_default("TUTOR" /* tutor */), validateRequest(updateBookingStatusValidation), BookingController.updateBookingStatus);
+router4.get("/:id/classroom", auth_middleware_default("STUDENT" /* student */, "TUTOR" /* tutor */), BookingController.getClassroomLink);
+var BookingRoutes = router4;
 
 // src/modules/category/category.routes.ts
-import express4 from "express";
+import express5 from "express";
 
 // src/modules/category/category.service.ts
 var createCategory3 = async (payload) => {
@@ -1103,41 +1240,41 @@ var categoryController = {
 };
 
 // src/modules/category/category.validation.ts
-import { z as z4 } from "zod";
-var createCategoryValidation = z4.object({
-  body: z4.object({
-    name: z4.string().min(2, "Category name must be at least 2 characters")
+import { z as z5 } from "zod";
+var createCategoryValidation = z5.object({
+  body: z5.object({
+    name: z5.string().min(2, "Category name must be at least 2 characters")
   })
 });
-var updateCategoryValidation = z4.object({
-  body: z4.object({
-    name: z4.string().min(2, "Category name must be at least 2 characters")
+var updateCategoryValidation = z5.object({
+  body: z5.object({
+    name: z5.string().min(2, "Category name must be at least 2 characters")
   }),
-  params: z4.object({
-    id: z4.string()
+  params: z5.object({
+    id: z5.string()
   })
 });
 
 // src/modules/category/category.routes.ts
-var router4 = express4.Router();
-router4.get("/", categoryController.getAllCategories);
-router4.post(
+var router5 = express5.Router();
+router5.get("/", categoryController.getAllCategories);
+router5.post(
   "/",
   auth_middleware_default("ADMIN" /* admin */),
   validateRequest(createCategoryValidation),
   categoryController.createCategory
 );
-router4.put(
+router5.put(
   "/:id",
   validateRequest(updateCategoryValidation),
   auth_middleware_default("ADMIN" /* admin */),
   categoryController.updateCategory
 );
-router4.delete("/:id", auth_middleware_default("ADMIN" /* admin */), categoryController.deleteCategory);
-var CategoryRoutes = router4;
+router5.delete("/:id", auth_middleware_default("ADMIN" /* admin */), categoryController.deleteCategory);
+var CategoryRoutes = router5;
 
 // src/modules/course/course.route.ts
-import express5 from "express";
+import express6 from "express";
 
 // src/modules/course/course.service.ts
 var courseInclude = {
@@ -1185,7 +1322,16 @@ var getAllCourses = async (filter) => {
       { description: { contains: filter.q, mode: "insensitive" } }
     ];
   }
-  const courses = await prisma.course.findMany({ where, include: courseInclude, orderBy: { createdAt: "desc" } });
+  const limit = filter?.limit ? parseInt(filter.limit) : void 0;
+  const page = filter?.page ? Math.max(1, parseInt(filter.page)) : 1;
+  const skip = limit ? (page - 1) * limit : void 0;
+  const courses = await prisma.course.findMany({
+    where,
+    include: courseInclude,
+    orderBy: { createdAt: "desc" },
+    ...limit && { take: limit },
+    ...skip !== void 0 && { skip }
+  });
   return courses.map(withAvgRating);
 };
 var updateCourse = async (id, userId, payload) => {
@@ -1289,39 +1435,39 @@ var CourseController = {
 };
 
 // src/modules/course/course.validation.ts
-import { z as z5 } from "zod";
-var createCourseValidation = z5.object({
-  body: z5.object({
-    title: z5.string().min(3, "Title must be at least 3 characters"),
-    description: z5.string().min(10, "Description must be at least 10 characters"),
-    categoryId: z5.string(),
-    price: z5.number().positive("Price must be positive")
+import { z as z6 } from "zod";
+var createCourseValidation = z6.object({
+  body: z6.object({
+    title: z6.string().min(3, "Title must be at least 3 characters"),
+    description: z6.string().min(10, "Description must be at least 10 characters"),
+    categoryId: z6.string(),
+    price: z6.number().positive("Price must be positive")
   })
 });
-var updateCourseValidation = z5.object({
-  body: z5.object({
-    title: z5.string().min(3).optional(),
-    description: z5.string().min(10).optional(),
-    categoryId: z5.string().optional(),
-    price: z5.number().positive().optional()
+var updateCourseValidation = z6.object({
+  body: z6.object({
+    title: z6.string().min(3).optional(),
+    description: z6.string().min(10).optional(),
+    categoryId: z6.string().optional(),
+    price: z6.number().positive().optional()
   }),
-  params: z5.object({
-    id: z5.string()
+  params: z6.object({
+    id: z6.string()
   })
 });
 
 // src/modules/course/course.route.ts
-var router5 = express5.Router();
-router5.get("/", CourseController.getAllCourses);
-router5.get("/:id", CourseController.getCourse);
-router5.get("/recommendations/me", auth_middleware_default("STUDENT" /* student */), CourseController.getRecommendations);
-router5.post("/", auth_middleware_default("TUTOR" /* tutor */), validateRequest(createCourseValidation), CourseController.createCourse);
-router5.put("/:id", auth_middleware_default("TUTOR" /* tutor */), validateRequest(updateCourseValidation), CourseController.updateCourse);
-router5.delete("/:id", auth_middleware_default("TUTOR" /* tutor */), CourseController.deleteCourse);
-var CourseRoutes = router5;
+var router6 = express6.Router();
+router6.get("/", CourseController.getAllCourses);
+router6.get("/:id", CourseController.getCourse);
+router6.get("/recommendations/me", auth_middleware_default("STUDENT" /* student */), CourseController.getRecommendations);
+router6.post("/", auth_middleware_default("TUTOR" /* tutor */), validateRequest(createCourseValidation), CourseController.createCourse);
+router6.put("/:id", auth_middleware_default("TUTOR" /* tutor */), validateRequest(updateCourseValidation), CourseController.updateCourse);
+router6.delete("/:id", auth_middleware_default("TUTOR" /* tutor */), CourseController.deleteCourse);
+var CourseRoutes = router6;
 
 // src/modules/notification/notification.routes.ts
-import express6 from "express";
+import express7 from "express";
 
 // src/modules/notification/notification.service.ts
 var getUserNotifications = async (userId) => {
@@ -1387,16 +1533,16 @@ var markAllAsRead2 = async (req, res, next) => {
 var NotificationController = { getAll, getUnreadCount: getUnreadCount2, markAsRead: markAsRead2, markAllAsRead: markAllAsRead2 };
 
 // src/modules/notification/notification.routes.ts
-var router6 = express6.Router();
+var router7 = express7.Router();
 var allRoles = auth_middleware_default("ADMIN" /* admin */, "STUDENT" /* student */, "TUTOR" /* tutor */);
-router6.get("/", allRoles, NotificationController.getAll);
-router6.get("/unread-count", allRoles, NotificationController.getUnreadCount);
-router6.patch("/read-all", allRoles, NotificationController.markAllAsRead);
-router6.patch("/:id/read", allRoles, NotificationController.markAsRead);
-var NotificationRoutes = router6;
+router7.get("/", allRoles, NotificationController.getAll);
+router7.get("/unread-count", allRoles, NotificationController.getUnreadCount);
+router7.patch("/read-all", allRoles, NotificationController.markAllAsRead);
+router7.patch("/:id/read", allRoles, NotificationController.markAsRead);
+var NotificationRoutes = router7;
 
 // src/modules/payment/payment.routes.ts
-import express7 from "express";
+import express8 from "express";
 
 // src/modules/payment/payment.service.ts
 import Stripe from "stripe";
@@ -1484,13 +1630,13 @@ var verify = async (req, res, next) => {
 var PaymentController = { checkout, verify };
 
 // src/modules/payment/payment.routes.ts
-var router7 = express7.Router();
-router7.post("/checkout", auth_middleware_default("STUDENT" /* student */), PaymentController.checkout);
-router7.post("/verify", auth_middleware_default("STUDENT" /* student */), PaymentController.verify);
-var PaymentRoutes = router7;
+var router8 = express8.Router();
+router8.post("/checkout", auth_middleware_default("STUDENT" /* student */), PaymentController.checkout);
+router8.post("/verify", auth_middleware_default("STUDENT" /* student */), PaymentController.verify);
+var PaymentRoutes = router8;
 
 // src/modules/review/review.routes.ts
-import express8 from "express";
+import express9 from "express";
 
 // src/modules/review/review.service.ts
 var createReview = async (studentId, payload) => {
@@ -1625,30 +1771,30 @@ var ReviewController = {
 };
 
 // src/modules/review/review.validation.ts
-import { z as z6 } from "zod";
-var createReviewValidation = z6.object({
-  body: z6.object({
-    bookingId: z6.string(),
-    rating: z6.number().min(1).max(5),
-    comment: z6.string().optional()
+import { z as z7 } from "zod";
+var createReviewValidation = z7.object({
+  body: z7.object({
+    bookingId: z7.string(),
+    rating: z7.number().min(1).max(5),
+    comment: z7.string().optional()
   })
 });
 
 // src/modules/review/review.routes.ts
-var router8 = express8.Router();
-router8.post(
+var router9 = express9.Router();
+router9.post(
   "/",
   auth_middleware_default("STUDENT" /* student */),
   validateRequest(createReviewValidation),
   ReviewController.createReview
 );
-router8.get("/", ReviewController.getAllReviews);
-router8.get("/course/:courseId", ReviewController.getReviewsForCourse);
-router8.get("/tutor/:tutorId", ReviewController.getReviewsForTutor);
-var ReviewRoutes = router8;
+router9.get("/", ReviewController.getAllReviews);
+router9.get("/course/:courseId", ReviewController.getReviewsForCourse);
+router9.get("/tutor/:tutorId", ReviewController.getReviewsForTutor);
+var ReviewRoutes = router9;
 
 // src/modules/tutor/tutor.routes.ts
-import express9 from "express";
+import express10 from "express";
 
 // src/modules/tutor/tutor.service.ts
 var createOrUpdateProfile = async (userId, payload) => {
@@ -1691,13 +1837,18 @@ var getProfileByUserId = async (userId) => {
   const avgRating = allRatings.length ? parseFloat((allRatings.reduce((a, b) => a + b, 0) / allRatings.length).toFixed(1)) : 0;
   return { ...profile, courses: coursesWithRating, avgRating };
 };
-var getAllTutors = async () => {
+var getAllTutors = async (filter) => {
+  const limit = filter?.limit ? parseInt(filter.limit) : void 0;
+  const page = filter?.page ? Math.max(1, parseInt(filter.page)) : 1;
+  const skip = limit ? (page - 1) * limit : void 0;
   const tutors = await prisma.tutor.findMany({
     include: {
       user: { select: { id: true, name: true, email: true, avatar: true } },
       courses: true,
       reviews: { select: { rating: true } }
-    }
+    },
+    ...limit && { take: limit },
+    ...skip !== void 0 && { skip }
   });
   return tutors.map((t) => {
     const ratings = t.reviews.map((r) => r.rating);
@@ -1764,7 +1915,7 @@ var getProfileByUserId2 = async (req, res, next) => {
 };
 var getAllTutors2 = async (req, res, next) => {
   try {
-    const result = await TutorService.getAllTutors();
+    const result = await TutorService.getAllTutors(req.query);
     sendResponse_default(res, { statusCode: 200, success: true, message: "All tutors fetched successfully", data: result });
   } catch (err) {
     next(err);
@@ -1795,27 +1946,27 @@ var TutorController = {
 };
 
 // src/modules/tutor/tutor.validation.ts
-import z7 from "zod";
-var createUpdateTutorValidation = z7.object({
-  body: z7.object({
-    bio: z7.string().min(10, "Bio must be at least 10 characters"),
-    expertise: z7.string().min(3, "Expertise is required"),
-    hourlyRate: z7.number().positive("Hourly rate must be positive"),
-    experience: z7.number().int().min(0, "Experience must be 0 or more")
+import z8 from "zod";
+var createUpdateTutorValidation = z8.object({
+  body: z8.object({
+    bio: z8.string().min(10, "Bio must be at least 10 characters"),
+    expertise: z8.string().min(3, "Expertise is required"),
+    hourlyRate: z8.number().positive("Hourly rate must be positive"),
+    experience: z8.number().int().min(0, "Experience must be 0 or more")
   })
 });
 
 // src/modules/tutor/tutor.routes.ts
-var router9 = express9.Router();
-router9.post("/profile", auth_middleware_default("TUTOR" /* tutor */), validateRequest(createUpdateTutorValidation), TutorController.createOrUpdateProfile);
-router9.get("/me", auth_middleware_default("TUTOR" /* tutor */), TutorController.getMyProfile);
-router9.get("/earnings", auth_middleware_default("TUTOR" /* tutor */), TutorController.getEarnings);
-router9.get("/profile/:id", TutorController.getProfileByUserId);
-router9.get("/", TutorController.getAllTutors);
-var TutorRoutes = router9;
+var router10 = express10.Router();
+router10.post("/profile", auth_middleware_default("TUTOR" /* tutor */), validateRequest(createUpdateTutorValidation), TutorController.createOrUpdateProfile);
+router10.get("/me", auth_middleware_default("TUTOR" /* tutor */), TutorController.getMyProfile);
+router10.get("/earnings", auth_middleware_default("TUTOR" /* tutor */), TutorController.getEarnings);
+router10.get("/profile/:id", TutorController.getProfileByUserId);
+router10.get("/", TutorController.getAllTutors);
+var TutorRoutes = router10;
 
 // src/routes/index.ts
-var router10 = Router();
+var router11 = Router();
 var routerManager = [
   { path: "/auth", route: AuthRoutes },
   { path: "/tutors", route: TutorRoutes },
@@ -1825,16 +1976,21 @@ var routerManager = [
   { path: "/reviews", route: ReviewRoutes },
   { path: "/admin", route: AdminRoutes },
   { path: "/notifications", route: NotificationRoutes },
-  { path: "/payments", route: PaymentRoutes }
+  { path: "/payments", route: PaymentRoutes },
+  { path: "/ai", route: AIRoutes }
 ];
-routerManager.forEach((r) => router10.use(r.path, r.route));
-var routes_default = router10;
+routerManager.forEach((r) => router11.use(r.path, r.route));
+var routes_default = router11;
 
 // src/app.ts
-var app = express10();
-app.use(express10.json());
-app.use(cors({ origin: true, credentials: true }));
-app.use("/uploads", express10.static(path3.join(process.cwd(), "uploads")));
+var app = express11();
+app.use(express11.json());
+var allowedOrigins = process.env.NODE_ENV === "production" ? [
+  "https://skillbridge-frontend-ruby.vercel.app",
+  process.env.APP_URL
+].filter(Boolean) : true;
+app.use(cors({ origin: allowedOrigins, credentials: true }));
+app.use("/uploads", express11.static(path3.join(process.cwd(), "uploads")));
 app.use("/api/v1", routes_default);
 app.get("/", (_req, res) => {
   res.send("SkillBridge API is running!");
