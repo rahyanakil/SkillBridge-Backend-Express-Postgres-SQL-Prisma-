@@ -64,6 +64,18 @@ const googleAuth = async (req: Request, res: Response, next: NextFunction) => {
   } catch (err: any) { next(err); }
 };
 
+const githubAuth = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await AuthService.githubAuth(req.body);
+    res.cookie("token", result.token, {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "strict",
+    });
+    sendResponse(res, { statusCode: 200, success: true, message: "GitHub login successful", data: result });
+  } catch (err: any) { next(err); }
+};
+
 export const AuthController = {
   createUser,
   loginUser,
@@ -72,4 +84,5 @@ export const AuthController = {
   changePassword,
   uploadAvatar,
   googleAuth,
+  githubAuth,
 };

@@ -88,6 +88,14 @@ const googleAuth = async (payload: {
   return { token, user: safeUser };
 };
 
+const githubAuth = async (payload: {
+  email: string;
+  name: string;
+  avatar?: string;
+}) => {
+  return googleAuth(payload);
+};
+
 export const AuthService = {
   createUser,
   loginUser,
@@ -96,4 +104,5 @@ export const AuthService = {
   changePassword,
   updateAvatar,
   googleAuth,
+  githubAuth,
 };
