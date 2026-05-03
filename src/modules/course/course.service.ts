@@ -52,7 +52,17 @@ const getAllCourses = async (filter?: any) => {
     ];
   }
 
-  const courses = await prisma.course.findMany({ where, include: courseInclude, orderBy: { createdAt: "desc" } });
+  const limit = filter?.limit ? parseInt(filter.limit) : undefined;
+  const page = filter?.page ? Math.max(1, parseInt(filter.page)) : 1;
+  const skip = limit ? (page - 1) * limit : undefined;
+
+  const courses = await prisma.course.findMany({
+    where,
+    include: courseInclude,
+    orderBy: { createdAt: "desc" },
+    ...(limit && { take: limit }),
+    ...(skip !== undefined && { skip }),
+  });
   return courses.map(withAvgRating);
 };
 

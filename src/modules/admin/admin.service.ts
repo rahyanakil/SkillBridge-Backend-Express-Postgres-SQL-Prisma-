@@ -1,9 +1,15 @@
 import { prisma } from "../../lib/prisma";
 
-const getAllUsers = async () => {
+const getAllUsers = async (filter?: { limit?: string; page?: string }) => {
+  const limit = filter?.limit ? parseInt(filter.limit) : undefined;
+  const page = filter?.page ? Math.max(1, parseInt(filter.page)) : 1;
+  const skip = limit ? (page - 1) * limit : undefined;
+
   return prisma.user.findMany({
     select: { id: true, name: true, email: true, role: true, avatar: true, createdAt: true, isBanned: true },
     orderBy: { createdAt: "desc" },
+    ...(limit && { take: limit }),
+    ...(skip !== undefined && { skip }),
   });
 };
 
@@ -20,7 +26,11 @@ const deleteUser = async (id: string) => {
   return prisma.user.delete({ where: { id } });
 };
 
-const getAllBookings = async () => {
+const getAllBookings = async (filter?: { limit?: string; page?: string }) => {
+  const limit = filter?.limit ? parseInt(filter.limit) : undefined;
+  const page = filter?.page ? Math.max(1, parseInt(filter.page)) : 1;
+  const skip = limit ? (page - 1) * limit : undefined;
+
   return prisma.booking.findMany({
     include: {
       student: { select: { name: true, email: true } },
@@ -28,6 +38,8 @@ const getAllBookings = async () => {
       course: { select: { title: true, price: true } },
     },
     orderBy: { createdAt: "desc" },
+    ...(limit && { take: limit }),
+    ...(skip !== undefined && { skip }),
   });
 };
 

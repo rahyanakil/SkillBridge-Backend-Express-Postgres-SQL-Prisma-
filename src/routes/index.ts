@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { AdminRoutes } from "../modules/admin/admin.routes";
+import { AIRoutes } from "../modules/ai/ai.routes";
 import { AuthRoutes } from "../modules/auth/auth.routes";
 import { BookingRoutes } from "../modules/booking/booking.routes";
 import { CategoryRoutes } from "../modules/category/category.routes";
@@ -21,6 +22,7 @@ const routerManager = [
   { path: "/admin", route: AdminRoutes },
   { path: "/notifications", route: NotificationRoutes },
   { path: "/payments", route: PaymentRoutes },
+  { path: "/ai", route: AIRoutes },
 ];
 
 routerManager.forEach((r) => router.use(r.path, r.route));

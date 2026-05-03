@@ -49,13 +49,19 @@ const getProfileByUserId = async (userId: string) => {
   return { ...profile, courses: coursesWithRating, avgRating };
 };
 
-const getAllTutors = async () => {
+const getAllTutors = async (filter?: { limit?: string; page?: string }) => {
+  const limit = filter?.limit ? parseInt(filter.limit) : undefined;
+  const page = filter?.page ? Math.max(1, parseInt(filter.page)) : 1;
+  const skip = limit ? (page - 1) * limit : undefined;
+
   const tutors = await prisma.tutor.findMany({
     include: {
       user: { select: { id: true, name: true, email: true, avatar: true } },
       courses: true,
       reviews: { select: { rating: true } },
     },
+    ...(limit && { take: limit }),
+    ...(skip !== undefined && { skip }),
   });
   return tutors.map((t: any) => {
     const ratings = t.reviews.map((r: any) => r.rating);

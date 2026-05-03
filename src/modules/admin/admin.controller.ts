@@ -4,7 +4,7 @@ import { AdminService } from "./admin.service";
 
 const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await AdminService.getAllUsers();
+    const result = await AdminService.getAllUsers(req.query as any);
     sendResponse(res, { statusCode: 200, success: true, message: "All users retrieved successfully", data: result });
   } catch (err: any) { next(err); }
 };
@@ -25,7 +25,7 @@ const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
 
 const getAllBookings = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await AdminService.getAllBookings();
+    const result = await AdminService.getAllBookings(req.query as any);
     sendResponse(res, { statusCode: 200, success: true, message: "All bookings retrieved successfully", data: result });
   } catch (err: any) { next(err); }
 };

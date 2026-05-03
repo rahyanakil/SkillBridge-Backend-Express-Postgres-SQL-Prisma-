@@ -19,6 +19,7 @@ const upload = multer({
 
 router.post("/register", validateRequest(registerValidation), AuthController.createUser);
 router.post("/login", validateRequest(loginValidation), AuthController.loginUser);
+router.post("/google", AuthController.googleAuth);
 router.get("/get-me", auth(UserRole.admin, UserRole.student, UserRole.tutor), AuthController.getMe);
 router.patch("/profile", auth(UserRole.admin, UserRole.student, UserRole.tutor), AuthController.updateProfile);
 router.patch("/password", auth(UserRole.admin, UserRole.student, UserRole.tutor), AuthController.changePassword);

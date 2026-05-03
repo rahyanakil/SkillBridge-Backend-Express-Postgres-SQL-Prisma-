@@ -52,6 +52,18 @@ const uploadAvatar = async (req: Request, res: Response, next: NextFunction) => 
   } catch (err: any) { next(err); }
 };
 
+const googleAuth = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await AuthService.googleAuth(req.body);
+    res.cookie("token", result.token, {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "strict",
+    });
+    sendResponse(res, { statusCode: 200, success: true, message: "Google login successful", data: result });
+  } catch (err: any) { next(err); }
+};
+
 export const AuthController = {
   createUser,
   loginUser,
@@ -59,4 +71,5 @@ export const AuthController = {
   updateProfile,
   changePassword,
   uploadAvatar,
+  googleAuth,
 };

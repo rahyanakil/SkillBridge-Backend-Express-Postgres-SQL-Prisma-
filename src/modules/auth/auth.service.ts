@@ -58,6 +58,36 @@ const updateAvatar = async (userId: string, avatarUrl: string) => {
   return safe;
 };
 
+const googleAuth = async (payload: {
+  email: string;
+  name: string;
+  avatar?: string;
+}) => {
+  let user = await prisma.user.findUnique({ where: { email: payload.email } });
+
+  if (!user) {
+    const randomPassword = await bcrypt.hash(Math.random().toString(36) + Date.now(), 8);
+    user = await prisma.user.create({
+      data: {
+        email: payload.email,
+        name: payload.name,
+        avatar: payload.avatar ?? null,
+        password: randomPassword,
+        role: "STUDENT",
+      },
+    });
+  }
+
+  if (user.isBanned) throw new Error("Your account has been suspended. Contact support.");
+
+  const userData = { id: user.id, name: user.name, role: user.role, email: user.email };
+  const token = jwt.sign(userData, config.jwt.secret as string, {
+    expiresIn: config.jwt.expiresIn as jwt.SignOptions["expiresIn"],
+  });
+  const { password, ...safeUser } = user;
+  return { token, user: safeUser };
+};
+
 export const AuthService = {
   createUser,
   loginUser,
@@ -65,4 +95,5 @@ export const AuthService = {
   updateProfile,
   changePassword,
   updateAvatar,
+  googleAuth,
 };

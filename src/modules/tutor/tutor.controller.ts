@@ -18,7 +18,7 @@ const getProfileByUserId = async (req: Request, res: Response, next: NextFunctio
 
 const getAllTutors = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await TutorService.getAllTutors();
+    const result = await TutorService.getAllTutors(req.query as any);
     sendResponse(res, { statusCode: 200, success: true, message: "All tutors fetched successfully", data: result });
   } catch (err: any) { next(err); }
 };
